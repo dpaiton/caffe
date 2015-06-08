@@ -617,18 +617,19 @@ message InfogainLossParameter {
 message SparseApproxParameter {
   // TODO: Set default?
   optional FillerParameter weight_filler = 1; // The filler for the weight
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
 
   // num_elements will determine overcompleteness
   // e.g. for 2x overcomplete, num_elements = num pixels in input patch * 2
-  optional int32 num_elements = 2 [default = 128];
+  optional int32 num_elements = 3 [default = 128];
 
   // membrane potential charges over a number of iterations
   // the longer you wait, the better the reconstruction
-  optional int32 num_iterations = 3 [default = 200];
+  optional int32 num_iterations = 4 [default = 200];
 
   // TODO: What's a good default value for lambda & eta?
-  optional float lambda = 4 [default = 0.1];
-  optional float eta = 5 [default = 0.001];
+  optional float lambda = 5 [default = 0.1];
+  optional float eta = 6 [default = 0.001];
 }
 
 message InnerProductParameter {
