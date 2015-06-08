@@ -291,6 +291,45 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Performs sparse approximation following dynamics described in
+ *        Rozell et al. 2008
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ **/
+template <typename Dtype>
+class SparseApproxLayer: public Layer<Dtype> {
+ public:
+  explicit SparseApproxLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "SparseApprox"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  // phi -- LxM  //  u,a -- MxB  //  x -- LxB
+
+  int M_; // Num neurons (also num basis vectors)
+  int L_; // Num pixels in input (also length of basis vectors)
+  int B_; // Batch size
+  int num_iterations_; 
+
+  
+  Blob<Dtype> competition_matrix_;  // <phi^T , phi> has dim MxM
+  Blob<Dtype> activities_;          // MxB
+  Blob<Dtype> activity_history_;    // M x num_iterations
+};
+
+/**
  * @brief Also known as a "fully-connected" layer, computes an inner product
  *        with a set of learned weights, and (optionally) adds biases.
  *
