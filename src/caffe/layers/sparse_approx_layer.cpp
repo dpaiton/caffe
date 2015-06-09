@@ -96,10 +96,11 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Blob<Dtype> temp_0;
   temp_0.ReshapeLike(biased_input_);
 
-  const Dtype* bottom_data = bottom[0]->cpu_data(); // x
-
-  caffe_sub(bottom[0]->count(), bottom_data,
-          this->blobs_[1]->cpu_data(), biased_input_.mutable_cpu_data()); // x-b
+  for (int batch=0; batch < bottom[0]->shape(0); batch++) { // same bias is applied to each batch item
+      caffe_sub(L_, bottom[0]->cpu_data() + bottom[0]->offset(batch),
+              this->blobs_[1]->cpu_data(),
+              biased_input_.mutable_cpu_data() + biased_input_.offset(batch)); // x-b
+  }
 
   const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
 
