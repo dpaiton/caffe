@@ -615,7 +615,7 @@ message InfogainLossParameter {
 }
 
 message SparseApproxParameter {
-  // TODO: Set default?
+  // TODO: Set default fillers?
   optional FillerParameter weight_filler = 1; // The filler for the weight
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
   optional FillerParameter bias_filler = 3; // The filler for the bias
