@@ -306,7 +306,7 @@ class SparseApproxLayer: public Layer<Dtype> {
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-  virtual inline const char* type() const { return "SparseApproximation"; }
+  virtual inline const char* type() const { return "SparseApprox"; }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
@@ -322,6 +322,7 @@ class SparseApproxLayer: public Layer<Dtype> {
   int L_; // Num pixels in input (also length of basis vectors)
   int B_; // Batch size
   int num_iterations_; 
+  Dtype lambda_, eta_;
   bool bias_term_;
 
   Blob<Dtype> biased_input_;        // BxM
