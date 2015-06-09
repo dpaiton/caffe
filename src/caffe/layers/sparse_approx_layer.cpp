@@ -48,7 +48,7 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Initialize & fill bias term
   if (bias_term_) {
-      vector<int> bias_shape(1,M_);
+      vector<int> bias_shape(1,L_);
       this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
 
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
@@ -92,9 +92,9 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
 
-  //temp_0_ holds b values
-  Blob<Dtype> temp_0_;
-  temp_0_.ReshapeLike(biased_input_);
+  //temp_0 holds b values
+  Blob<Dtype> temp_0;
+  temp_0.ReshapeLike(biased_input_);
 
   const Dtype* bottom_data = bottom[0]->cpu_data(); // x
 
@@ -112,7 +112,7 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   //
   // b = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  top
   // g = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
-  // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  temp_0_
+  // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  temp_0
   // b_ga = sub(b, ag)
   // f(a) = add(a, eta_ * add(b_ga, lambda_ sgn(a)))
   // 
@@ -127,9 +127,9 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // b
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, L_,
           (Dtype)1., biased_input_.cpu_data(), weights, (Dtype)0.,
-          temp_0_.mutable_cpu_data());
+          temp_0.mutable_cpu_data());
 
-  caffe_copy(top[0]->count(), temp_0_.cpu_data(), activity_history_.mutable_cpu_data());
+  caffe_copy(top[0]->count(), temp_0.cpu_data(), activity_history_.mutable_cpu_data());
 
   // ag = 0
   
@@ -143,8 +143,10 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const Dtype* const_a_current = activity_history_.cpu_data() + activity_history_.offset(iteration);
       const Dtype* const_a_past    = activity_history_.cpu_data() + activity_history_.offset(iteration-1);
 
+      // TODO: Convert previous time activities to thresholded values?
+
       // Add b value to output, store in current history slot
-      caffe_add(top[0]->count(), temp_0_.cpu_data(), const_a_current, mutable_a_current);
+      caffe_add(top[0]->count(), temp_0.cpu_data(), const_a_current, mutable_a_current);
 
       // Compute b - a[iteration-1] g, store in current history slot
       caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_,
