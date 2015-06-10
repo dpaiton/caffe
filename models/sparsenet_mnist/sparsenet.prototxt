@@ -42,7 +42,7 @@ layer {
 
 layer {
   name: "encode"
-  type: "SparseApproximation"
+  type: "SparseApprox"
   bottom: "data"
   top: "encode"
   param {
@@ -50,7 +50,8 @@ layer {
     lr_mult: 1
     decay_mult: 1
   }
-  param { # bias
+  param { 
+    name: "bias"
     lr_mult: 1
     decay_mult: 0
   }
@@ -58,11 +59,15 @@ layer {
     num_elements: 1000
     weight_filler {
       type: "gaussian"
-      std: 1
+      std: 0.001
     }
-    num_iterations: 200
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    num_iterations: 100
     lambda: 0.1
-    eta: 0.001
+    eta: 0.01
   }
 }
 
@@ -77,6 +82,7 @@ layer {
     decay_mult: 1
   }
   param {
+    name: "bias"
     lr_mult: 1
     decay_mult: 0
   }
@@ -84,7 +90,7 @@ layer {
     num_output: 784 
     weight_filler {
       type: "gaussian"
-      std: 1
+      std: 0.001
     }
     bias_filler {
       type: "constant"
