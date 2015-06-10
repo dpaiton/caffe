@@ -44,8 +44,6 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
 
   Dtype compute_energy(shared_ptr<SparseApproxLayer<Dtype> > layer, LayerParameter layer_param){
     // E = 1/2 sum_p( (x[p] - sum_m(phi[m,p] * a[m]) - b[p])^2 ) + lambda * sum_m(a[m])
-    SparseApproxParameter* sparse_approx_param =
-        layer_param.mutable_sparse_approx_param();
     const Dtype* input    = this->blob_bottom_vec_[0]->cpu_data();
     const Dtype* activity = this->blob_top_vec_[0]->cpu_data();
     const Dtype* weights  = layer->blobs()[0]->cpu_data();
@@ -54,8 +52,8 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
     int num_channels = this->blob_bottom_vec_[0]->shape(1);
     int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
     int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
-    int num_elements = sparse_approx_param->num_elements(); // M
-    Dtype lambda     = sparse_approx_param->lambda();
+    int num_elements = layer_param.mutable_sparse_approx_param()->num_elements(); // M
+    Dtype lambda     = layer_param.mutable_sparse_approx_param()->lambda();
     Dtype E = 0;
     for (int b=0; b < batch_size; b++) {                    // batch
         Dtype residual_err = 0;
@@ -126,7 +124,7 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
     SparseApproxParameter* sparse_approx_param =
         layer_param.mutable_sparse_approx_param();
 
-    sparse_approx_param->set_num_iterations(20);
+    sparse_approx_param->set_num_iterations(3);
     sparse_approx_param->set_num_elements(10);
     sparse_approx_param->set_lambda(0.1);
     sparse_approx_param->set_eta(0.001);
@@ -154,8 +152,16 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
     // Compute E2
     Dtype E2 = this->compute_energy(layer,layer_param);
 
-    //Make sure E2 < E1
+    // Again with more iterations
+    layer->SetNumIterations(6,this->blob_bottom_vec_,this->blob_top_vec_);
+    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+
+    // Compute E3
+    Dtype E3 = this->compute_energy(layer,layer_param);
+
+    //Make sure E3 < E2 < E1
     CHECK_LE(E2,E1);
+    CHECK_LE(E3,E2);
     
   } else {
     LOG(ERROR) << "Skipping test due to old architecture.";
