@@ -35,8 +35,8 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Intialize weights
   vector<int> weight_shape(2);
-  weight_shape[0] = M_;
-  weight_shape[1] = L_;
+  weight_shape[0] = L_;
+  weight_shape[1] = M_;
   this->blobs_[0].reset(new Blob<Dtype>(weight_shape));
 
   // Fill the weights
@@ -60,10 +60,7 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
   // Set size of biased_input_ (BxL)
-  vector<int> biased_input_shape(2);
-  biased_input_shape[0] = B_;
-  biased_input_shape[1] = L_;
-  biased_input_.Reshape(biased_input_shape);
+  biased_input_.Reshape(bottom[0]->shape());
 
   // Set size of activity history matrix (TxM, where T = num_iterations
   vector<int> activity_history_shape(2);
@@ -90,45 +87,45 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
 
-  //temp_0 holds b values
-  Blob<Dtype> temp_0;
-  temp_0.ReshapeLike(biased_input_);
-
-  for (int batch=0; batch < bottom[0]->shape(0); batch++) { // same bias is applied to each batch item
-      caffe_sub(L_, bottom[0]->cpu_data() + bottom[0]->offset(batch),
-              this->blobs_[1]->cpu_data(),
-              biased_input_.mutable_cpu_data() + biased_input_.offset(batch)); // x-b
-  }
-
-  const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
-
   // u(t+1) = (1-tau) u(t) + tau [x**T phi - u(t) phi**T phi T(u(t)-lambda_) ]
   // a(t+1) = u(t+1) T(u(t+1)-lambda_)
   //
   // f(a) = a + eta_ [ x**T phi - a phi**T phi - lambda_ sgn(a)]
+  //                   |______|     |________|
+  //                      b             g
   //
-  // b = gemm(x,phi**T)    (BxL) * (LxM) = (BxM)  ->  top
-  // g = gemm(phi,phi**T)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
-  // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  temp_0
+  // b = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  temp_0
+  // g = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
+  // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  top
   // b_ga = sub(b, ag)
   // f(a) = add(a, eta_ * add(b_ga, lambda_ sgn(a)))
   // 
-  // phi -- MxL  //  u,a -- BxM  //  x -- BxL  //  
+  // phi -- LxM  //  u,a -- BxM  //  x -- BxL  //  
 
+  // Subtract bias values from input
+  for (int batch=0; batch < bottom[0]->shape(0); batch++) { // same bias is applied to each batch item
+      caffe_sub(L_, bottom[0]->cpu_data() + bottom[0]->offset(batch),
+              this->blobs_[1]->cpu_data(),
+              biased_input_.mutable_cpu_data() + biased_input_.offset(batch)); // x = x - bias
+  }
+
+  const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
+
+  //temp_0 holds b values
+  Blob<Dtype> temp_0;
+  temp_0.Reshape(top[0]->shape());
 
   // First iteration
   // g
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, M_, L_,
+  caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, M_, L_,
           (Dtype)1., weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
   // b
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, L_,
           (Dtype)1., biased_input_.cpu_data(), weights, (Dtype)0.,
           temp_0.mutable_cpu_data());
 
   caffe_copy(top[0]->count(), temp_0.cpu_data(), activity_history_.mutable_cpu_data());
-
-  // ag = 0
   
   // f(a)
   caffe_scal(top[0]->count(), eta_, activity_history_.mutable_cpu_data());
@@ -166,11 +163,11 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
      // Add previous activities to current acticities, store in current slot
      caffe_add(top[0]->count(), const_a_past, const_a_current, mutable_a_current);
   }
+
   // Store latest activity history into top for output
   caffe_copy(top[0]->count(),
           activity_history_.cpu_data() + activity_history_.offset(num_iterations_-1),
           top[0]->mutable_cpu_data());
-
 }
 
 template <typename Dtype>
