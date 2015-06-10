@@ -13,8 +13,6 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  // Make sure bottom.num_axes() == 4? Maybe this is guaranteed?
-
   num_iterations_ = this->layer_param_.sparse_approx_param().num_iterations();
   eta_            = this->layer_param_.sparse_approx_param().eta();
   lambda_         = this->layer_param_.sparse_approx_param().lambda();
