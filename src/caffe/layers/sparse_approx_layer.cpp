@@ -37,8 +37,8 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Intialize weights
   vector<int> weight_shape(2);
-  weight_shape[0] = L_;
-  weight_shape[1] = M_;
+  weight_shape[0] = M_;
+  weight_shape[1] = L_;
   this->blobs_[0].reset(new Blob<Dtype>(weight_shape));
 
   // Fill the weights
@@ -104,29 +104,27 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
 
-  //Dtype* top_data = top[0]->mutable_cpu_data(); // f(a)
-
   // u(t+1) = (1-tau) u(t) + tau [x**T phi - u(t) phi**T phi T(u(t)-lambda_) ]
   // a(t+1) = u(t+1) T(u(t+1)-lambda_)
   //
   // f(a) = a + eta_ [ x**T phi - a phi**T phi - lambda_ sgn(a)]
   //
-  // b = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  top
-  // g = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
+  // b = gemm(x,phi**T)    (BxL) * (LxM) = (BxM)  ->  top
+  // g = gemm(phi,phi**T)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
   // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  temp_0
   // b_ga = sub(b, ag)
   // f(a) = add(a, eta_ * add(b_ga, lambda_ sgn(a)))
   // 
-  // phi -- LxM  //  u,a -- BxM  //  x -- BxL  //  
+  // phi -- MxL  //  u,a -- BxM  //  x -- BxL  //  
 
 
   // First iteration
   // g
-  caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, M_, L_,
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, M_, L_,
           (Dtype)1., weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
   // b
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, L_,
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
           (Dtype)1., biased_input_.cpu_data(), weights, (Dtype)0.,
           temp_0.mutable_cpu_data());
 
