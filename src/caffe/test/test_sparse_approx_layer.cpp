@@ -18,6 +18,11 @@ namespace caffe {
 extern cudaDeviceProp CAFFE_TEST_CUDA_PROP;
 #endif
 
+/**
+ * Warning: this test only works if A values do not cross 0
+ * (i.e. gradient is not differentiable). Set inputs to 
+ * positive only to make sure energy decreases.
+ **/
 template <typename TypeParam>
 class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
@@ -29,7 +34,7 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
         blob_top_(new Blob<Dtype>()) {
     // fill the values
     FillerParameter filler_param;
-    filler_param.set_min(0);
+    filler_param.set_min(0.5);
     filler_param.set_max(1);
     UniformFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
@@ -44,10 +49,10 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
 
   Dtype compute_energy(shared_ptr<SparseApproxLayer<Dtype> > layer, LayerParameter layer_param){
     // E = 1/2 sum_p( (x[p] - sum_m(phi[m,p] * a[m]) - b[p])^2 ) + lambda * sum_m(a[m])
-    const Dtype* input    = this->blob_bottom_vec_[0]->cpu_data();
-    const Dtype* activity = this->blob_top_vec_[0]->cpu_data();
-    const Dtype* weights  = layer->blobs()[0]->cpu_data();
-    const Dtype* bias     = layer->blobs()[1]->cpu_data();
+    const Blob<Dtype>* input    = this->blob_bottom_vec_[0];
+    const Blob<Dtype>* activity = this->blob_top_vec_[0];
+    const shared_ptr<Blob<Dtype> >  weights  = layer->blobs()[0];
+    const shared_ptr<Blob<Dtype> >  bias     = layer->blobs()[1];
     int batch_size   = this->blob_bottom_vec_[0]->shape(0); // B
     int num_channels = this->blob_bottom_vec_[0]->shape(1);
     int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
@@ -63,15 +68,15 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
                 for (int w=0; w < num_pixelsW; w++) {       // width
                     Dtype inner_term = 0;
                     for (int m=0; m < num_elements; m++) {  // elements
-                        if (c==0&&h==0&&w==0) {
-                            a_sum += std::abs(activity[this->blob_top_vec_[0]->offset(b,m)]);
+                        if (c==0 && h==0 && w==0) {
+                            a_sum += std::abs(activity->cpu_data()[activity->offset(b, m)]);
                         }
-                        inner_term += input[this->blob_bottom_vec_[0]->offset(b,c,h,w)] - 
-                                      weights[layer->blobs()[0]->offset(c*h*w+h*w+w,m)] * 
-                                      activity[this->blob_top_vec_[0]->offset(b,m)] - 
-                                      bias[c*h*w+h*w+w];
+                        inner_term += input->cpu_data()[input->offset(b, c, h, w)] - 
+                                      weights->cpu_data()[weights->offset(c*h*w+h*w+w, m)] * 
+                                      activity->cpu_data()[activity->offset(b, m)] - 
+                                      bias->cpu_data()[c*h*w+h*w+w];
                     }
-                    residual_err += inner_term*inner_term;
+                    residual_err += inner_term * inner_term;
                 }
             }
         }
@@ -96,7 +101,7 @@ TYPED_TEST(SparseApproxLayerTest, TestSetUp) {
   SparseApproxParameter* sparse_approx_param =
       layer_param.mutable_sparse_approx_param();
 
-  sparse_approx_param->set_num_iterations(2);
+  sparse_approx_param->set_num_iterations(3);
   sparse_approx_param->set_num_elements(10);
   
   shared_ptr<SparseApproxLayer<Dtype> > layer(
@@ -105,7 +110,7 @@ TYPED_TEST(SparseApproxLayerTest, TestSetUp) {
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   EXPECT_EQ(this->blob_top_->shape(0), 3);  // B_ -> Batch
-  EXPECT_EQ(this->blob_top_->shape(1), 10); // C_ -> Channels TODO: channels get set to 10 or width?
+  EXPECT_EQ(this->blob_top_->shape(1), 10); // C_ -> Channels 
   //EXPECT_EQ(this->blob_top_->shape(2), 1);  // L_ -> Height or # Pixels
   //EXPECT_EQ(this->blob_top_->shape(3), 1);  // M_ -> Width or # Elements
 }
@@ -129,12 +134,16 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
     sparse_approx_param->set_lambda(0.1);
     sparse_approx_param->set_eta(0.001);
     sparse_approx_param->set_bias_term(true);
+
+    // Set weights
     sparse_approx_param->mutable_weight_filler()->set_type("uniform");
     sparse_approx_param->mutable_weight_filler()->set_min(0);
     sparse_approx_param->mutable_weight_filler()->set_max(1);
+
+    // Set bias
     sparse_approx_param->mutable_bias_filler()->set_type("uniform");
-    sparse_approx_param->mutable_bias_filler()->set_min(1);
-    sparse_approx_param->mutable_bias_filler()->set_max(2);
+    sparse_approx_param->mutable_bias_filler()->set_min(0);
+    sparse_approx_param->mutable_bias_filler()->set_max(0.5);
 
     // Create layer
     shared_ptr<SparseApproxLayer<Dtype> > layer(
@@ -158,6 +167,8 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
 
     // Compute E3
     Dtype E3 = this->compute_energy(layer,layer_param);
+
+    std::cout<<"\nE1: "<<E1<<"\tE2: "<<E2<<"\tE3: "<<E3<<"\n";
 
     //Make sure E3 < E2 < E1
     CHECK_LE(E2,E1);
