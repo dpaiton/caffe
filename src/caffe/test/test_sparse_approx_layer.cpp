@@ -42,6 +42,46 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_;
   }
 
+  Dtype compute_energy(shared_ptr<SparseApproxLayer<Dtype> > layer, LayerParameter layer_param){
+    // E = 1/2 sum_p( (x[p] - sum_m(phi[m,p] * a[m]) - b[p])^2 ) + lambda * sum_m(a[m])
+    SparseApproxParameter* sparse_approx_param =
+        layer_param.mutable_sparse_approx_param();
+    const Dtype* input    = this->blob_bottom_vec_[0]->cpu_data();
+    const Dtype* activity = this->blob_top_vec_[0]->cpu_data();
+    const Dtype* weights  = layer->blobs()[0]->cpu_data();
+    const Dtype* bias     = layer->blobs()[1]->cpu_data();
+    int batch_size   = this->blob_bottom_vec_[0]->shape(0); // B
+    int num_channels = this->blob_bottom_vec_[0]->shape(1);
+    int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
+    int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
+    int num_elements = sparse_approx_param->num_elements(); // M
+    Dtype lambda     = sparse_approx_param->lambda();
+    Dtype E = 0;
+    for (int b=0; b < batch_size; b++) {                    // batch
+        Dtype residual_err = 0;
+        Dtype a_sum = 0;
+        for (int c=0; c < num_channels; c++) {              // channel
+            for (int h=0; h < num_pixelsH; h++) {           // height
+                for (int w=0; w < num_pixelsW; w++) {       // width
+                    Dtype inner_term = 0;
+                    for (int m=0; m < num_elements; m++) {  // elements
+                        if (c==0&&h==0&&w==0) {
+                            a_sum += std::abs(activity[this->blob_top_vec_[0]->offset(b,m)]);
+                        }
+                        inner_term += input[this->blob_bottom_vec_[0]->offset(b,c,h,w)] - 
+                                      weights[layer->blobs()[0]->offset(c*h*w+h*w+w,m)] * 
+                                      activity[this->blob_top_vec_[0]->offset(b,m)] - 
+                                      bias[c*h*w+h*w+w];
+                    }
+                    residual_err += inner_term*inner_term;
+                }
+            }
+        }
+        E += 0.5 * residual_err + lambda * a_sum;
+    }
+    return E;
+  }
+
   Blob<Dtype>* const blob_bottom_;
   Blob<Dtype>* const blob_top_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
@@ -81,95 +121,38 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
   if (Caffe::mode() == Caffe::CPU ||
       sizeof(Dtype) == 4 || IS_VALID_CUDA) {
 
+    //Set params
     LayerParameter layer_param;
-
     SparseApproxParameter* sparse_approx_param =
         layer_param.mutable_sparse_approx_param();
 
     sparse_approx_param->set_num_iterations(20);
     sparse_approx_param->set_num_elements(10);
-
     sparse_approx_param->set_lambda(0.1);
     sparse_approx_param->set_eta(0.001);
-
     sparse_approx_param->set_bias_term(true);
-
     sparse_approx_param->mutable_weight_filler()->set_type("uniform");
     sparse_approx_param->mutable_weight_filler()->set_min(0);
     sparse_approx_param->mutable_weight_filler()->set_max(1);
-    
     sparse_approx_param->mutable_bias_filler()->set_type("uniform");
     sparse_approx_param->mutable_bias_filler()->set_min(1);
     sparse_approx_param->mutable_bias_filler()->set_max(2);
 
+    // Create layer
     shared_ptr<SparseApproxLayer<Dtype> > layer(
         new SparseApproxLayer<Dtype>(layer_param));
 
+    // Setup
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype* input    = this->blob_bottom_vec_[0]->cpu_data();
-    const Dtype* activity = this->blob_top_vec_[0]->cpu_data();
-    const Dtype* weights  = layer->blobs()[0]->cpu_data();
-    const Dtype* bias     = layer->blobs()[1]->cpu_data();
-    int batch_size   = this->blob_bottom_vec_[0]->shape(0);    // B
-    int num_channels = this->blob_bottom_vec_[0]->shape(1);
-    int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
-    int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
-    int num_elements = sparse_approx_param->num_elements(); // M
 
-    Dtype lambda     = sparse_approx_param->lambda();
-
-    // E = 1/2 sum_p( (x[p] - sum_m(phi[m,p] * a[m]) - b[p])^2 ) + lambda * sum_m(a[m])
     // Compute E1
-    Dtype E1 = 0;
-    for (int b=0; b < batch_size; b++) {                   // batch
-        Dtype residual_err = 0;
-        Dtype a_sum = 0;
-        for (int c=0; c < num_channels; c++) {             // channel
-            for (int h=0; h < num_pixelsH; h++) {          // height
-                for (int w=0; w < num_pixelsW; w++) {      // width
-                    Dtype inner_term = 0;
-                    for (int m=0; m < num_elements; m++) { // elements
-                        if (c==0&&h==0&&w==0) {
-                            a_sum += activity[this->blob_top_vec_[0]->offset(b,m)];
-                        }
-                        inner_term += input[this->blob_bottom_vec_[0]->offset(b,c,h,w)] - 
-                                      weights[layer->blobs()[0]->offset(c*h*w+h*w+w,m)] * 
-                                      activity[this->blob_top_vec_[0]->offset(b,m)] - 
-                                      bias[c*h*w+h*w+w];
-                    }
-                    residual_err += inner_term*inner_term;
-                }
-            }
-        }
-        E1 += 0.5 * residual_err + lambda * a_sum;
-    }
+    Dtype E1 = this->compute_energy(layer,layer_param);
 
+    // Forward Pass
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
     // Compute E2
-    Dtype E2 = 0;
-    for (int b=0; b < batch_size; b++) {                   // batch
-        Dtype residual_err = 0;
-        Dtype a_sum = 0;
-        for (int c=0; c < num_channels; c++) {             // channel
-            for (int h=0; h < num_pixelsH; h++) {          // height
-                for (int w=0; w < num_pixelsW; w++) {      // width
-                    Dtype inner_term = 0;
-                    for (int m=0; m < num_elements; m++) { // elements
-                        if (c==0&&h==0&&w==0) {
-                            a_sum += std::abs(activity[this->blob_top_vec_[0]->offset(b, m)]);
-                        }
-                        inner_term += input[this->blob_bottom_vec_[0]->offset(b, c, h, w)] - 
-                                      weights[layer->blobs()[0]->offset(c*h*w+h*w+w, m)] * 
-                                      activity[this->blob_top_vec_[0]->offset(b, m)] - 
-                                      bias[c*h*w+h*w+w];
-                    }
-                    residual_err += inner_term*inner_term;
-                }
-            }
-        }
-        E2 += 0.5 * residual_err + lambda * a_sum;
-    }
+    Dtype E2 = this->compute_energy(layer,layer_param);
 
     //Make sure E2 < E1
     CHECK_LE(E2,E1);
