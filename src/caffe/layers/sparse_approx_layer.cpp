@@ -90,9 +90,9 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // u(t+1) = (1-tau) u(t) + tau [x**T phi - u(t) phi**T phi T(u(t)-lambda_) ]
   // a(t+1) = u(t+1) T(u(t+1)-lambda_)
   //
-  // f(a) = a + eta_ [ x**T phi - a phi**T phi - lambda_ sgn(a)]
-  //                   |______|     |________|
-  //                      b             g
+  // f(a) = a + eta_ [ x phi - a phi**T phi - lambda_ sgn(a)]
+  //                  |____|     |________|
+  //                    b            g
   //
   // b = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  temp_0
   // g = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
