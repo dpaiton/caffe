@@ -58,33 +58,36 @@ def main(args):
     # just print the weight sizes (not biases)
     print [(k, v[0].data.shape) for k, v in net.params.items()]
 
+    # TODO: Don't index batch # 0, but instead use vis_square to see all batches
     net.forward()
-    input    = np.array(net.blobs['data'].data[0])[0,:,:]
-    activity = np.array(net.blobs['encode'].data[0])
-    weights  = np.array(net.params['decode'][0].data)
-    biases   = np.array(net.params['decode'][1].data)
-    recon    = np.array(net.blobs['decode'].data[0]).reshape(input.shape)
+    input     = np.array(net.blobs['data'].data)
+    activity  = np.array(net.blobs['encode'].data[0])
+    weights   = np.array(net.params['decode'][0].data)
+    biases    = np.array(net.params['decode'][1].data)
+    recon     = np.array(net.blobs['decode'].data).reshape(input_img.shape)
 
-    input_img = np.uint8(input*255)
-    Image.fromarray(input_img).save('/caffe/Analysis/input.png')
+    import IPython; IPython.embed()
 
-    weight_vis = vis_square(weights.T.reshape(weights.shape[1], input.shape[0], input.shape[1]))
+    input_vis = vis_square(input)
+    input_img = np.uint8(input_vis*255)
+    Image.fromarray(input_img).save('/caffe/Analysis/input_img.png')
+
+    weight_vis = vis_square(weights.T.reshape(weights.shape[1], input_img.shape[0], input_img.shape[1]))
     weight_img = np.uint8(weight_vis*255)
     Image.fromarray(weight_img).save('/caffe/Analysis/weights.png')
 
-    bias_vis = vis_square(biases.reshape(1, input.shape[0], input.shape[1]))
+    bias_vis = vis_square(biases.reshape(1, input_img.shape[0], input_img.shape[1]))
     bias_img = np.uint8(bias_vis*255)
     Image.fromarray(bias_img).save('/caffe/Analysis/bias.png')
 
-    recon_img = np.uint8(recon*255)
+    recon_vis = vis_square(recon)
+    recon_img = np.uint8(recon_vis*255)
     Image.fromarray(recon_img).save('/caffe/Analysis/recon.png')
 
-    plt.hist(activity,bins=activity.shape[0]/100)
+    plt.hist(activity,bins=activity.shape[0]/10)
     plt.savefig('/caffe/Analysis/activity.png',bbox_inches='tight')
  
-    mean_recon_error = np.mean(np.sqrt((input-recon)**2))
-
-    #import IPython; IPython.embed()
+    mean_recon_error = np.mean(np.sqrt((input_img-recon)**2))
 
 
 if __name__ == '__main__':
