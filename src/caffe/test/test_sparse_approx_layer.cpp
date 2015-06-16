@@ -168,8 +168,6 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
     // Compute E3
     Dtype E3 = this->compute_energy(layer,layer_param);
 
-    std::cout<<"\nE1: "<<E1<<"\tE2: "<<E2<<"\tE3: "<<E3<<"\n";
-
     //Make sure E3 < E2 < E1
     CHECK_LE(E2,E1);
     CHECK_LE(E3,E2);
