@@ -332,7 +332,7 @@ class SparseApproxLayer: public Layer<Dtype> {
   int L_; // Num pixels in input (also length of basis vectors)
   int B_; // Batch size
   int num_iterations_; 
-  Dtype lambda_, eta_;
+  Dtype lambda_, eta_, gamma_;
   bool bias_term_;
 
   Blob<Dtype> biased_input_;        // BxL
