@@ -16,6 +16,7 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   num_iterations_ = this->layer_param_.sparse_approx_param().num_iterations();
   eta_            = this->layer_param_.sparse_approx_param().eta();
   lambda_         = this->layer_param_.sparse_approx_param().lambda();
+  gamma_          = this->layer_param_.sparse_approx_param().gamma();
 
   bias_term_ = this->layer_param_.sparse_approx_param().bias_term();
 
@@ -23,8 +24,6 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   B_ = bottom[0]->shape(0);
   L_ = bottom[0]->count() / bottom[0]->shape(0); // pixels per batch
   M_ = this->layer_param_.sparse_approx_param().num_elements();
-
-  //TODO: Assert that blob dimensions are correct for math
 
   // Allocate weights
   if (bias_term_) {
@@ -87,20 +86,18 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
 
-  // u(t+1) = (1-tau) u(t) + tau [x**T phi - u(t) phi**T phi T(u(t)-lambda_) ]
-  // a(t+1) = u(t+1) T(u(t+1)-lambda_)
+  // f(a) = a + eta_ [ (x-b) phi - a phi**T phi - lambda_ sgn(a)]
+  //                   |________|    |________|   |____________|
+  //                      ext            g              c
   //
-  // f(a) = a + eta_ [ x phi - a phi**T phi - lambda_ sgn(a)]
-  //                  |____|     |________|
-  //                    b            g
-  //
-  // b = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  temp_0
-  // g = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
-  // ag = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  top
-  // b_ga = sub(b, ag)
-  // f(a) = add(a, eta_ * add(b_ga, lambda_ sgn(a)))
+  // ext  = gemm(x,phi)       (BxL) * (LxM) = (BxM)  ->  temp_0
+  // g    = gemm(phi**T,phi)  (MxL) * (LxM) = (MxM)  ->  competition_matrix_
+  // ag   = gemm(a,g)        (BxM) * (MxM) = (BxM)  ->  top
+  // e_ga = sub(ext, ag)
+  // f(a) = add(a, eta_ * add(e_ga, lambda_ sgn(a)))
   // 
-  // phi -- LxM  //  u,a -- BxM  //  x -- BxL  //  
+  // weights     //  output    //  input     //  bias
+  // phi -- LxM  //  a -- BxM  //  x -- BxL  //  b -- 1xL
 
   // Subtract bias values from input
   for (int batch=0; batch < bottom[0]->shape(0); batch++) { // same bias is applied to each batch item
@@ -111,7 +108,7 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
 
-  //temp_0 holds b values
+  //temp_0 holds ext values
   Blob<Dtype> temp_0;
   temp_0.Reshape(top[0]->shape());
 
@@ -120,7 +117,7 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, M_, L_,
           (Dtype)1., weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
-  // b
+  // ext 
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, L_,
           (Dtype)1., biased_input_.cpu_data(), weights, (Dtype)0.,
           temp_0.mutable_cpu_data());
@@ -134,15 +131,22 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   for (int iteration = 1; iteration < num_iterations_; iteration++) {
       // Set up pointers
       Dtype* mutable_a_current     = activity_history_.mutable_cpu_data() + activity_history_.offset(iteration);
+      Dtype* mutable_a_past        = activity_history_.mutable_cpu_data() + activity_history_.offset(iteration-1);
       const Dtype* const_a_current = activity_history_.cpu_data() + activity_history_.offset(iteration);
       const Dtype* const_a_past    = activity_history_.cpu_data() + activity_history_.offset(iteration-1);
 
-      // TODO: Convert previous time activities to thresholded values?
+      // Threshold previous activities
+      // Currently implements rectified soft threshold.
+      for (int i = 0; i < M_; i++) {
+          if (const_a_past[i] < gamma_) {
+              caffe_set(1, (Dtype)0., mutable_a_past + i);
+          }
+      }
 
-      // Add b value to output, store in current history slot
+      // Add ext value to output, store in current history slot
       caffe_add(top[0]->count(), temp_0.cpu_data(), const_a_current, mutable_a_current);
 
-      // Compute b - a[iteration-1] g, store in current history slot
+      // Compute ext - a[iteration-1] g, store in current history slot
       caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_,
               (Dtype)-1., const_a_past, competition_matrix_.cpu_data(), (Dtype)1.,
               mutable_a_current);
@@ -174,6 +178,14 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
+
+    // weights     //  output    //  input     //  bias
+    // phi -- LxM  //  a -- BxM  //  x -- BxL  //  b -- 1xL
+
+    // Only propagate through layer if param_propagate_down_ is set
+    // Gradient with respect to weight
+    //if (this->param_propagate_down_[0]) {
+    //    const Dtype* top_diff = top[0]->cpu_diff(); 
 
 }
 
