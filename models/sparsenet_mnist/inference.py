@@ -18,8 +18,9 @@ parser = ArgumentParser('sgd training driver')
 parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
-model_file = '/caffe/models/sparsenet_mnist/sparsenet_iter_500.caffemodel'
-model_prototxt = '/caffe/models/sparsenet_mnist/sparsenet.prototxt'
+root_dir   = '/osx/caffe/'
+model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_500.caffemodel'
+model_prototxt = 'models/sparsenet_mnist/sparsenet.prototxt'
 
 # take an array of shape (n, height, width) or (n, height, width, channels)
 # and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
@@ -38,6 +39,15 @@ def vis_square(data, padsize=1, padval=0):
     
     return data
 
+def weight_movie():
+    for iter in range(500,3500,500):
+    	model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_'+str(iter)+'.caffemodel'
+    	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
+    	weights    = np.array(net.params['decode'][0].data)
+        weight_vis = vis_square(weights.T.reshape(weights.shape[1], 28, 28))
+        weight_img = np.uint8(weight_vis*255)
+        Image.fromarray(weight_img).save(root_dir+'Analysis/weights_'+str(iter)+'.png')
+
 def main(args):
     if args.device_id == -1:
         print 'running on cpu'
@@ -49,7 +59,7 @@ def main(args):
 
     net = caffe.Net(model_prototxt, model_file, caffe.TEST)
 
-    batch_size = net.blobs['data'].data.shape[0]
+    batch_size  = net.blobs['data'].data.shape[0]
     batch_shape = net.blobs['data'].data.shape[1:]
 
     # each output is (batch size, feature dim, spatial dim)
@@ -60,35 +70,29 @@ def main(args):
 
     # TODO: Don't index batch # 0, but instead use vis_square to see all batches
     net.forward()
-    input     = np.array(net.blobs['data'].data)
+    input_dat = np.squeeze(np.array(net.blobs['data'].data))
     activity  = np.array(net.blobs['encode'].data[0])
-    weights   = np.array(net.params['decode'][0].data)
     biases    = np.array(net.params['decode'][1].data)
-    recon     = np.array(net.blobs['decode'].data).reshape(input_img.shape)
+    recon     = np.array(net.blobs['decode'].data).reshape(input_dat.shape)
 
-    import IPython; IPython.embed()
-
-    input_vis = vis_square(input)
+    input_vis = vis_square(input_dat)
     input_img = np.uint8(input_vis*255)
-    Image.fromarray(input_img).save('/caffe/Analysis/input_img.png')
+    Image.fromarray(input_img).save(root_dir+'Analysis/input_img.png')
 
-    weight_vis = vis_square(weights.T.reshape(weights.shape[1], input_img.shape[0], input_img.shape[1]))
-    weight_img = np.uint8(weight_vis*255)
-    Image.fromarray(weight_img).save('/caffe/Analysis/weights.png')
-
-    bias_vis = vis_square(biases.reshape(1, input_img.shape[0], input_img.shape[1]))
+    bias_vis = vis_square(biases.reshape(1, input_dat.shape[1], input_dat.shape[2]))
     bias_img = np.uint8(bias_vis*255)
-    Image.fromarray(bias_img).save('/caffe/Analysis/bias.png')
+    Image.fromarray(bias_img).save(root_dir+'Analysis/bias.png')
 
     recon_vis = vis_square(recon)
     recon_img = np.uint8(recon_vis*255)
-    Image.fromarray(recon_img).save('/caffe/Analysis/recon.png')
+    Image.fromarray(recon_img).save(root_dir+'Analysis/recon.png')
 
-    plt.hist(activity,bins=activity.shape[0]/10)
-    plt.savefig('/caffe/Analysis/activity.png',bbox_inches='tight')
- 
-    mean_recon_error = np.mean(np.sqrt((input_img-recon)**2))
+    plt.hist(activity,bins=1000)
+    plt.savefig(root_dir+'Analysis/activity.png',bbox_inches='tight')
 
+    weight_movie()
+
+    import IPython; IPython.embed()
 
 if __name__ == '__main__':
     args = parser.parse_args()
