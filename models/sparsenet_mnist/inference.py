@@ -19,7 +19,7 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
 root_dir   = '/osx/caffe/'
-model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_500.caffemodel'
+model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_28000.caffemodel'
 model_prototxt = 'models/sparsenet_mnist/sparsenet.prototxt'
 
 # take an array of shape (n, height, width) or (n, height, width, channels)
@@ -39,8 +39,8 @@ def vis_square(data, padsize=1, padval=0):
     
     return data
 
-def weight_movie():
-    for iter in range(500,3500,500):
+def weight_movie(start,end,step):
+    for iter in range(start,end,step):
     	model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_'+str(iter)+'.caffemodel'
     	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
     	weights    = np.array(net.params['decode'][0].data)
@@ -68,10 +68,8 @@ def main(args):
     # just print the weight sizes (not biases)
     print [(k, v[0].data.shape) for k, v in net.params.items()]
 
-    # TODO: Don't index batch # 0, but instead use vis_square to see all batches
     net.forward()
     input_dat = np.squeeze(np.array(net.blobs['data'].data))
-    activity  = np.array(net.blobs['encode'].data[0])
     biases    = np.array(net.params['decode'][1].data)
     recon     = np.array(net.blobs['decode'].data).reshape(input_dat.shape)
 
@@ -87,10 +85,15 @@ def main(args):
     recon_img = np.uint8(recon_vis*255)
     Image.fromarray(recon_img).save(root_dir+'Analysis/recon.png')
 
-    plt.hist(activity,bins=1000)
-    plt.savefig(root_dir+'Analysis/activity.png',bbox_inches='tight')
+    weight_movie(500,28000,500)
 
-    weight_movie()
+    activity = []
+    activity.append(np.array(net.blobs['encode'].data))
+    for iter in range(50):
+        net.forward()
+        activity.append(np.array(net.blobs['encode'].data))
+    plt.hist(np.vstack(activity).flatten(),bins=1000)
+    plt.savefig(root_dir+'Analysis/activity.png',bbox_inches='tight')
 
     import IPython; IPython.embed()
 
