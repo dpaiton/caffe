@@ -10,7 +10,7 @@ display: 10
 max_iter: 65000
 weight_decay: 0.00001
 snapshot: 500
-snapshot_prefix: "models/sparsenet_mnist/sparsenet"
+snapshot_prefix: "/osx/caffe/models/sparsenet_mnist/sparsenet"
 momentum: 0.9
 # solver mode: CPU or GPU
 solver_mode: CPU

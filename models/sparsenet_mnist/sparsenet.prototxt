@@ -65,10 +65,10 @@ layer {
       type: "constant"
       value: 0
     }
-    num_iterations: 400
+    num_iterations: 100
     lambda: 0.1
     eta: 0.01
-    gamma: 0   //if 0 then no thresholding
+    gamma: 0
   }
 }
 
