@@ -7,6 +7,7 @@ from cStringIO import StringIO
 from matplotlib import pyplot as plt
 from os.path import join
 import sys
+import IPython
 
 from collections import defaultdict
 
@@ -39,7 +40,7 @@ def vis_square(data, padsize=1, padval=0):
     
     return data
 
-def weight_movie(start,end,step):
+def make_movies(start,end,step):
     for iter in range(start,end,step):
     	model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_'+str(iter)+'.caffemodel'
     	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
@@ -47,6 +48,18 @@ def weight_movie(start,end,step):
         weight_vis = vis_square(weights.T.reshape(weights.shape[1], 28, 28))
         weight_img = np.uint8(weight_vis*255)
         Image.fromarray(weight_img).save(root_dir+'Analysis/weights_'+str(iter)+'.png')
+	
+	weights_l2 = np.sqrt(np.sum(weights**2,axis=0))
+	plt.bar(np.arange(0,len(weights_l2)),weights_l2)
+	plt.savefig(root_dir+'Analysis/weight_l2_'+str(iter)+'.png',bbox_inches='tight')
+	plt.clf()
+
+        net.forward()
+	activity = np.array(net.blobs['encode'].data)
+        activity_img = activity / np.max(np.abs(activity)) * 255./2 + 255./2
+	activity_img = np.uint8(activity_img)
+	Image.fromarray(activity_img).save(root_dir+'Analysis/activity_'+str(iter)+'.png')
+	#IPython.embed()
 
 def main(args):
     if args.device_id == -1:
@@ -85,7 +98,7 @@ def main(args):
     recon_img = np.uint8(recon_vis*255)
     Image.fromarray(recon_img).save(root_dir+'Analysis/recon.png')
 
-    weight_movie(500,28000,500)
+    make_movies(1000,39000,1000)
 
     activity = []
     activity.append(np.array(net.blobs['encode'].data))
@@ -95,7 +108,7 @@ def main(args):
     plt.hist(np.vstack(activity).flatten(),bins=1000)
     plt.savefig(root_dir+'Analysis/activity.png',bbox_inches='tight')
 
-    import IPython; IPython.embed()
+    #IPython.embed()
 
 if __name__ == '__main__':
     args = parser.parse_args()
