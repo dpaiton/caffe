@@ -189,9 +189,9 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
 }
 
-//#ifdef CPU_ONLY
-//STUB_GPU(SparseApproxLayer);
-//#endif
+#ifdef CPU_ONLY
+STUB_GPU(SparseApproxLayer);
+#endif
 
 INSTANTIATE_CLASS(SparseApproxLayer);
 REGISTER_LAYER_CLASS(SparseApprox);

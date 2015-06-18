@@ -111,8 +111,6 @@ TYPED_TEST(SparseApproxLayerTest, TestSetUp) {
 
   EXPECT_EQ(this->blob_top_->shape(0), 3);  // B_ -> Batch
   EXPECT_EQ(this->blob_top_->shape(1), 10); // C_ -> Channels 
-  //EXPECT_EQ(this->blob_top_->shape(2), 1);  // L_ -> Height or # Pixels
-  //EXPECT_EQ(this->blob_top_->shape(3), 1);  // M_ -> Width or # Elements
 }
 
 TYPED_TEST(SparseApproxLayerTest, TestForward) {
