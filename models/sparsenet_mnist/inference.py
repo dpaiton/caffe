@@ -44,6 +44,7 @@ def make_movies(start,end,step):
     for iter in range(start,end,step):
     	model_file = root_dir+'/models/sparsenet_mnist/sparsenet_iter_'+str(iter)+'.caffemodel'
     	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
+
     	weights    = np.array(net.params['decode'][0].data)
         weight_vis = vis_square(weights.T.reshape(weights.shape[1], 28, 28))
         weight_img = np.uint8(weight_vis*255)
@@ -54,11 +55,17 @@ def make_movies(start,end,step):
 	plt.savefig(root_dir+'Analysis/weight_l2_'+str(iter)+'.png',bbox_inches='tight')
 	plt.clf()
 
+	biases   = np.array(net.params['decode'][1].data)
+	bias_vis = vis_square(biases.reshape(1, 28, 28))
+	bias_img = np.uint8(bias_vis*255)
+	Image.fromarray(bias_img).save(root_dir+'Analysis/bias'+str(iter)+'.png')
+
         net.forward()
 	activity = np.array(net.blobs['encode'].data)
         activity_img = activity / np.max(np.abs(activity)) * 255./2 + 255./2
 	activity_img = np.uint8(activity_img)
 	Image.fromarray(activity_img).save(root_dir+'Analysis/activity_'+str(iter)+'.png')
+
 	#IPython.embed()
 
 def main(args):
@@ -83,16 +90,11 @@ def main(args):
 
     net.forward()
     input_dat = np.squeeze(np.array(net.blobs['data'].data))
-    biases    = np.array(net.params['decode'][1].data)
     recon     = np.array(net.blobs['decode'].data).reshape(input_dat.shape)
 
     input_vis = vis_square(input_dat)
     input_img = np.uint8(input_vis*255)
     Image.fromarray(input_img).save(root_dir+'Analysis/input_img.png')
-
-    bias_vis = vis_square(biases.reshape(1, input_dat.shape[1], input_dat.shape[2]))
-    bias_img = np.uint8(bias_vis*255)
-    Image.fromarray(bias_img).save(root_dir+'Analysis/bias.png')
 
     recon_vis = vis_square(recon)
     recon_img = np.uint8(recon_vis*255)
