@@ -185,7 +185,11 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // Only propagate through layer if param_propagate_down_ is set
     // Gradient with respect to weight
     //if (this->param_propagate_down_[0]) {
+    //    // top_diff should be:
+    //    //     {1/P (s - [a + eta ((s - b) phi - a phi^T phi - lambda sgn(a))] phi^T - b)^T * 
+    //    //     
     //    const Dtype* top_diff = top[0]->cpu_diff(); 
+
 
 }
 

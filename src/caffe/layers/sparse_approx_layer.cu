@@ -15,7 +15,7 @@ void SparseApproxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
   // Subtract bias values from input
   for (int batch=0; batch < bottom[0]->shape(0); batch++) { // same bias is applied to each batch item
-      caffe_sub(L_, bottom[0]->gpu_data() + bottom[0]->offset(batch),
+      caffe_gpu_sub(L_, bottom[0]->gpu_data() + bottom[0]->offset(batch),
               this->blobs_[1]->gpu_data(),
               biased_input_.mutable_gpu_data() + biased_input_.offset(batch)); // x = x - bias
   }
@@ -39,7 +39,7 @@ void SparseApproxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   caffe_copy(top[0]->count(), temp_0.gpu_data(), activity_history_.mutable_gpu_data());
   
   // f(a)
-  caffe_scal(top[0]->count(), eta_, activity_history_.mutable_gpu_data());
+  caffe_gpu_scal(top[0]->count(), eta_, activity_history_.mutable_gpu_data());
 
   // Next iterations
   for (int iteration = 1; iteration < num_iterations_; iteration++) {
@@ -53,12 +53,12 @@ void SparseApproxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       // Currently implements rectified soft threshold.
       for (int i = 0; i < M_; i++) {
           if (const_a_past[i] < gamma_) {
-              caffe_set(1, (Dtype)0., mutable_a_past + i);
+              caffe_gpu_set(1, (Dtype)0., mutable_a_past + i);
           }
       }
 
       // Add ext value to output, store in current history slot
-      caffe_add(top[0]->count(), temp_0.gpu_data(), const_a_current, mutable_a_current);
+      caffe_gpu_add(top[0]->count(), temp_0.gpu_data(), const_a_current, mutable_a_current);
 
       // Compute ext - a[iteration-1] g, store in current history slot
       caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_,
@@ -69,17 +69,17 @@ void SparseApproxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
      caffe_gpu_sign(top[0]->count(), const_a_past, top[0]->mutable_gpu_data());
 
      // lambda_ * sign(a), store in top temporarily
-     caffe_scal(top[0]->count(), lambda_, top[0]->mutable_gpu_data()); 
+     caffe_gpu_scal(top[0]->count(), lambda_, top[0]->mutable_gpu_data()); 
 
      // Store [ ... ] in current history slot
-     caffe_sub(top[0]->count(), const_a_current, top[0]->gpu_data(), 
+     caffe_gpu_sub(top[0]->count(), const_a_current, top[0]->gpu_data(), 
              mutable_a_current);
 
      // eta_ * [ ... ], store in current hist slot
-     caffe_scal(top[0]->count(), eta_, mutable_a_current);
+     caffe_gpu_scal(top[0]->count(), eta_, mutable_a_current);
 
      // Add previous activities to current acticities, store in current slot
-     caffe_add(top[0]->count(), const_a_past, const_a_current, mutable_a_current);
+     caffe_gpu_add(top[0]->count(), const_a_past, const_a_current, mutable_a_current);
   }
 
   // Store latest activity history into top for output
