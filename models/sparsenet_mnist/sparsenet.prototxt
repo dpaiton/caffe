@@ -69,7 +69,7 @@ layer {
     num_iterations: 100
     lambda: 0.1
     eta: 0.01
-    gamma: -FLT_MAX 
+    gamma: 0
   }
 }
 
