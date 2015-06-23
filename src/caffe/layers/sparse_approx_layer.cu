@@ -49,13 +49,16 @@ void SparseApproxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const Dtype* const_a_current = activity_history_.gpu_data() + activity_history_.offset(iteration);
       const Dtype* const_a_past    = activity_history_.gpu_data() + activity_history_.offset(iteration-1);
 
-      // Threshold previous activities
-      // Currently implements rectified soft threshold.
-      for (int i = 0; i < M_; i++) {
-          if (const_a_past[i] < gamma_) {
-              caffe_gpu_set(1, (Dtype)0., mutable_a_past + i);
-          }
-      }
+      //// Threshold previous activities
+      //// Currently implements rectified soft threshold.
+      // Look into threshold layer cu file.
+      // can't dereference GPU data pointer, have to use CPU pointer
+      // if it is best to do this in the CPU then you'll have to store flags
+      //for (int i = 0; i < M_; i++) {
+      //    if (const_a_past[i] < gamma_) {
+      //        caffe_gpu_set(1, (Dtype)0., mutable_a_past + i);
+      //    }
+      //}
 
       // Add ext value to output, store in current history slot
       caffe_gpu_add(top[0]->count(), temp_0.gpu_data(), const_a_current, mutable_a_current);
