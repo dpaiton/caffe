@@ -342,6 +342,8 @@ class SparseApproxLayer: public Layer<Dtype> {
   Blob<Dtype> biased_input_;        // BxL
   Blob<Dtype> competition_matrix_;  // <phi^T , phi> has dim MxM
   Blob<Dtype> activity_history_;    // num_iterations x B*M
+  Blob<Dtype> batch_multiplier_;     // for summing along one dim of matrix
+  Blob<Dtype> weight_multiplier_;   // for summing along one dim of matrix
 };
 
 /**
