@@ -112,7 +112,7 @@ def main(args):
         net.forward()
         activity.append(np.array(net.blobs['encode'].data))
     plt.hist(np.vstack(activity).flatten(),bins=1000)
-    plt.savefig(root_dir+'Analysis/activity_'+model_ver+'.png',bbox_inches='tight')
+    plt.savefig(root_dir+'Analysis/activity_hist_'+model_ver+'.png',bbox_inches='tight')
 
     #IPython.embed()
 
