@@ -67,7 +67,7 @@ layer {
       value: 0
     }
     num_iterations: 100
-    lambda: 0.05
+    lambda: 0.01
     eta: 0.01
     gamma: 0
   }
