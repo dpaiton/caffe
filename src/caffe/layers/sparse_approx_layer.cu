@@ -152,6 +152,6 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     }
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(InnerProductLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(SparseApproxLayer);
 
 }  // namespace caffe
