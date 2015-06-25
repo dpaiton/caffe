@@ -20,9 +20,11 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
 root_dir   = '/osx/caffe/'
-model_ver  = 'v.0.5'
-max_iter   = 1598000
-model_file = root_dir+'/models/sparsenet_mnist/sparsenet_'+model_ver+'_iter_'+str(max_iter)+'.caffemodel'
+model_ver  = 'v.1.0'
+mov_start  = 5000
+mov_step   = 5000
+mov_end    = 100000
+model_file = root_dir+'/models/sparsenet_mnist/sparsenet_'+model_ver+'_iter_'+str(mov_end)+'.caffemodel'
 model_prototxt = 'models/sparsenet_mnist/sparsenet.prototxt'
 
 # take an array of shape (n, height, width) or (n, height, width, channels)
@@ -68,8 +70,6 @@ def make_movies(start,end,step):
 	activity_img = np.uint8(activity_img)
 	Image.fromarray(activity_img).save(root_dir+'Analysis/activity_'+model_ver+'_'+str(iter)+'.png')
 
-	print "Iteration # "+str(iter)
-
 	#IPython.embed()
 
 def main(args):
@@ -104,7 +104,7 @@ def main(args):
     recon_img = np.uint8(recon_vis*255)
     Image.fromarray(recon_img).save(root_dir+'Analysis/recon_'+model_ver+'.png')
 
-    make_movies(1000,max_iter+100,1000)
+    make_movies(mov_start,mov_end+100,mov_step)
 
     activity = []
     activity.append(np.array(net.blobs['encode'].data))
