@@ -96,7 +96,60 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
-    //Do stuff
+    // weights     //  output    //  input     //  bias
+    // phi -- LxM  //  a -- BxM  //  x -- BxL  //  b -- 1xL
+    //
+    // top_diff should be (BxM):
+    //     {-1/P (s - [a + eta ((s - b) phi - a phi^T phi - 
+    //     lambda sgn(a))]} phi
+
+    // Weight gradient
+    if (this->param_propagate_down_[0]) {
+        // weight gradient should be:
+        //      eta [ (s-b) - 2 a phi^T]
+
+        // compute [a phi^T], store in temp_1_
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
+                          top[0]->gpu_data(), this->blobs_[0]->gpu_data(),
+                          (Dtype)0., temp_1_.mutable_gpu_data());
+
+        caffe_gpu_scal(temp_1_.count(), (Dtype)2., temp_1_.mutable_gpu_data());
+
+        // compute (s - b) - [2a phi^T], store in temp_2_
+        caffe_gpu_sub(biased_input_.count(), biased_input_.gpu_data(), 
+                temp_1_.gpu_data(), temp_2_.mutable_gpu_data());
+
+        caffe_gpu_scal(temp_2_.count(), eta_, temp_2_.mutable_gpu_data());
+
+        // compute [...]^T top_diff, store in weight_diff
+        caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
+                           temp_2_.gpu_data(), top[0]->gpu_diff(), (Dtype)0.,
+                           this->blobs_[0]->mutable_gpu_diff());
+    }
+
+    // Bias gradient
+    if (bias_term_ && this->param_propagate_down_[1]) {
+        // Sum top_diff over B axis
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
+                            batch_multiplier_.gpu_data(), top[0]->gpu_diff(), 
+                            (Dtype)0., sum_top_diff_.mutable_gpu_data());
+
+        caffe_gpu_scal(sum_top_diff_.count(), -eta_, sum_top_diff_.mutable_gpu_data());
+
+        // -eta * sum(top_diff) * phi^T 
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, 1, L_, M_, (Dtype)1.,
+                            sum_top_diff_.gpu_data(), this->blobs_[0]->gpu_data(),
+                            (Dtype)0., this->blobs_[1]->mutable_gpu_diff());
+    }
+    
+    // Input gradient
+    if (propagate_down[0]) {
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
+                            top[0]->gpu_diff(), this->blobs_[0]->gpu_data(), (Dtype)0.,
+                            bottom[0]->mutable_gpu_diff());
+
+        caffe_gpu_scal(bottom[0]->count(), eta_, bottom[0]->mutable_gpu_data());
+    }
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(InnerProductLayer);
