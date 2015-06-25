@@ -45,7 +45,7 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   // Initialize & fill bias term
   if (bias_term_) {
-      vector<int> bias_shape(1,L_);
+      vector<int> bias_shape(1, L_);
       this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
 
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
@@ -81,15 +81,21 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   top[0]->Reshape(top_shape);
   caffe_set(top[0]->count(), (Dtype)0., top[0]->mutable_cpu_data());
 
-  vector<int> weight_mult_shape(1, M_);
-  weight_multiplier_.Reshape(weight_mult_shape);
-  caffe_set(M_, (Dtype)1., weight_multiplier_.mutable_cpu_data());
-
   if (bias_term_) {
     vector<int> batch_mult_shape(1, B_);
     batch_multiplier_.Reshape(batch_mult_shape);
     caffe_set(B_, (Dtype)1., batch_multiplier_.mutable_cpu_data());
   }
+
+  // Backward pass variables
+  vector<int> temp_shape(2);
+  temp_shape[0] = B_;
+  temp_shape[1] = L_;
+  temp_1_.Reshape(temp_shape);
+  temp_2_.Reshape(temp_shape);
+
+  vector<int> sum_top_diff_shape(1,M_);
+  sum_top_diff_.Reshape(sum_top_diff_shape);
 }
 
 template <typename Dtype>
@@ -190,89 +196,60 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
-//    // weights     //  output    //  input     //  bias
-//    // phi -- LxM  //  a -- BxM  //  x -- BxL  //  b -- 1xL
-//        
-//    const Dtype* top_diff = top[0]->cpu_diff(); 
-//    const Dtype* weights  = this->blobs_[0]->cpu_data(); // phi
-//
-//    // param_propagate_down_[0] is for weights
-//    if (this->param_propagate_down_[0]) {
-//        // top_diff should be:
-//        //     {1/P (s - [a + eta ((s - b) phi - a phi^T phi - 
-//        //     lambda sgn(a))] phi^T - b)^T *
-//        //     [a + eta ((s - b) phi - a phi^T phi - lambda sgn(a))]}
-//        //
-//        // bottom_diff should be:
-//        //     ones((L_,1)) * sum_M { top_diff^T * [ (s - b) - 2 a phi^T ]^T }
-//
-//        Blob<Dtype> temp_1, temp_2, temp_3;
-//        temp_1.Reshape(bottom[0]->shape());
-//        temp_2.Reshape(bottom[0]->shape());
-//        vector<int> temp_3_shape(M_, B_);
-//        temp_3.Reshape(temp_3_shape);
-//
-//        // compute [2a phi^T], store in temp_1
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
-//                          top[0]->cpu_data(), weights, (Dtype)1.,
-//                          temp_1.mutable_cpu_data());
-//
-//        caffe_scal(temp_1.count(), (Dtype)2., temp_1.mutable_cpu_data());
-//
-//        // compute (s - b) - [2a phi^T], store in temp_2
-//        caffe_sub(biased_input_.count(), biased_input_.cpu_data(), 
-//                temp_1.cpu_data(), temp_2.mutable_cpu_data());
-//
-//        // compute top_diff * [...], store in temp_3 -- MxB
-//        caffe_cpu_gemm<Dtype>(CblasTrans, CblasTrans, M_, B_, L_,  (Dtype)1.,
-//                            top_diff, temp_2.cpu_data(), (Dtype)1.,
-//                            temp_3.mutable_cpu_data());
-//
-//        // compute sum over M_, store in temp_4 -- 1xM
-//        Blob<Dtype> temp_4;
-//        vector<int> temp_4_shape(1, M_);
-//        temp_4.Reshape(temp_4_shape);
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, B_, M_, (Dtype)1.,
-//                            weight_multiplier_.cpu_data(), temp_3.cpu_data(),
-//                            (Dtype)0., temp_4.mutable_cpu_data());
-//
-//        Blob<Dtype> ones_blob;
-//        vector<int> ones_shape(L_, 1);
-//        ones_blob.Reshape(ones_shape);
-//        caffe_set(ones_blob.count(), (Dtype)1., ones_blob.mutable_cpu_data());
-//
-//        // Gradient with respect to weight -- LxM
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans,CblasNoTrans, L_, M_, 1,  (Dtype)1., 
-//                            ones_blob.cpu_data(), temp_4.cpu_data(), (Dtype)1., 
-//                            this->blobs_[0]->mutable_cpu_diff());
-//    }
-//
-//    if (bias_term_ && this->param_propagate_down_[1]) {
-//        Blob<Dtype> temp_5, temp_6;
-//        vector<int> pixel_vec_shape(1, L_);
-//        temp_5.Reshape(pixel_vec_shape);
-//        temp_6.Reshape(pixel_vec_shape);
-//
-//        // Sum top_diff over B axis
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, B_, (Dtype)1.,
-//                            batch_multiplier_.cpu_data(), top_diff, (Dtype)0.,
-//                            temp_5.mutable_cpu_data());
-//
-//        // Sum weights over M axis
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, 1, L_, M_, (Dtype)1.,
-//                            weight_multiplier_.cpu_data(), weights, (Dtype)0.,
-//                            temp_6.mutable_cpu_data());
-//
-//        // Gradient with respect to bias
-//        caffe_mul(L_, temp_5.cpu_data(), temp_6.cpu_data(),
-//                this->blobs_[1]->mutable_cpu_diff());
-//    }
-//    
-//    if (propagate_down[0]) {
-//        // Gradient with respsect to bottom data
-//        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
-//                            top_diff, weights, (Dtype)0., bottom[0]->mutable_cpu_diff());
-//    }
+    // weights     //  output    //  input     //  bias
+    // phi -- LxM  //  a -- BxM  //  x -- BxL  //  b -- 1xL
+    //
+    // top_diff should be (BxM):
+    //     {-1/P (s - [a + eta ((s - b) phi - a phi^T phi - 
+    //     lambda sgn(a))]} phi
+
+    // Weight gradient
+    if (this->param_propagate_down_[0]) {
+        // weight gradient should be:
+        //      eta [ (s-b) - 2 a phi^T]
+
+        // compute [a phi^T], store in temp_1_
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
+                          top[0]->cpu_data(), this->blobs_[0]->cpu_data(),
+                          (Dtype)0., temp_1_.mutable_cpu_data());
+
+        caffe_scal(temp_1_.count(), (Dtype)2., temp_1_.mutable_cpu_data());
+
+        // compute (s - b) - [2a phi^T], store in temp_2_
+        caffe_sub(biased_input_.count(), biased_input_.cpu_data(), 
+                temp_1_.cpu_data(), temp_2_.mutable_cpu_data());
+
+        caffe_scal(temp_2_.count(), eta_, temp_2_.mutable_cpu_data());
+
+        // compute [...]^T top_diff, store in weight_diff
+        caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
+                           temp_2_.cpu_data(), top[0]->cpu_diff(), (Dtype)0.,
+                           this->blobs_[0]->mutable_cpu_diff());
+    }
+
+    // Bias gradient
+    if (bias_term_ && this->param_propagate_down_[1]) {
+        // Sum top_diff over B axis
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
+                            batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
+                            (Dtype)0., sum_top_diff_.mutable_cpu_data());
+
+        caffe_scal(sum_top_diff_.count(), -eta_, sum_top_diff_.mutable_cpu_data());
+
+        // -eta * sum(top_diff) * phi^T 
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, 1, L_, M_, (Dtype)1.,
+                            sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
+                            (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
+    }
+    
+    // Input gradient
+    if (propagate_down[0]) {
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, L_, M_, (Dtype)1.,
+                            top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
+                            bottom[0]->mutable_cpu_diff());
+
+        caffe_scal(bottom[0]->count(), eta_, bottom[0]->mutable_cpu_data());
+    }
 }
 
 #ifdef CPU_ONLY
