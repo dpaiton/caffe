@@ -8,11 +8,11 @@ base_lr: 0.1
 lr_policy: "step"
 gamma: 0.1
 stepsize: 100000
-display: 10
+display: 100
 max_iter: 85000
 weight_decay: 0.0001
 snapshot: 1000
-snapshot_prefix: "/osx/caffe/models/sparsenet_mnist/sparsenet"
+snapshot_prefix: "models/sparsenet_mnist/sparsenet"
 momentum: 0.9
 # solver mode: CPU or GPU
 solver_mode: CPU
