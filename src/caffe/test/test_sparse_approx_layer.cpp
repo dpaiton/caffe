@@ -177,38 +177,39 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
   }
 }
 
-//TYPED_TEST(SparseApproxLayerTest, TestGradient) {
-//  typedef typename TypeParam::Dtype Dtype;
-//  bool IS_VALID_CUDA = false;
-//
-//#ifndef CPU_ONLY
-//  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
-//#endif
-//
-//  if (Caffe::mode() == Caffe::CPU ||
-//      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-//
-//    LayerParameter layer_param;
-//
-//    SparseApproxParameter* sparse_approx_param =
-//        layer_param.mutable_sparse_approx_param();
-//
-//    sparse_approx_param->set_num_elements(10);
-//    sparse_approx_param->mutable_weight_filler()->set_type("gaussian");
-//    sparse_approx_param->mutable_bias_filler()->set_type("gaussian");
-//    sparse_approx_param->mutable_bias_filler()->set_min(1);
-//    sparse_approx_param->mutable_bias_filler()->set_max(2);
-//
-//    SparseApproxLayer<Dtype> layer(layer_param);
-//
-//    GradientChecker<Dtype> checker(1e-2, 1e-3);
-//
-//    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-//        this->blob_top_vec_);
-//
-//  } else {
-//    LOG(ERROR) << "Skipping test due to old architecture.";
-//  }
-//}
+TYPED_TEST(SparseApproxLayerTest, TestGradient) {
+  typedef typename TypeParam::Dtype Dtype;
+  bool IS_VALID_CUDA = false;
+
+#ifndef CPU_ONLY
+  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
+#endif
+
+  if (Caffe::mode() == Caffe::CPU ||
+      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
+
+    LayerParameter layer_param;
+
+    SparseApproxParameter* sparse_approx_param =
+        layer_param.mutable_sparse_approx_param();
+
+    sparse_approx_param->set_num_elements(10);
+    sparse_approx_param->mutable_weight_filler()->set_type("gaussian");
+    sparse_approx_param->mutable_bias_filler()->set_type("gaussian");
+    sparse_approx_param->mutable_bias_filler()->set_min(1);
+    sparse_approx_param->mutable_bias_filler()->set_max(2);
+    sparse_approx_param->set_bias_term(true);
+
+    SparseApproxLayer<Dtype> layer(layer_param);
+
+    GradientChecker<Dtype> checker(1e-2, 1e-2);
+
+    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+        this->blob_top_vec_);
+
+  } else {
+    LOG(ERROR) << "Skipping test due to old architecture.";
+  }
+}
 
 }  // namespace caffe

@@ -626,9 +626,8 @@ message SparseApproxParameter {
 
   // membrane potential charges over a number of iterations
   // the longer you wait, the better the reconstruction
-  optional int32 num_iterations = 5 [default = 200];
+  optional int32 num_iterations = 5 [default = 1];
 
-  // TODO: What's a good default value for lambda & eta?
   optional float lambda = 6 [default = 0.1];
   optional float eta = 7 [default = 0.001];
   optional float gamma = 8 [default = 0];
