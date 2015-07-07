@@ -236,28 +236,6 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
-  ////weight gradient should be:
-  ////     eta_ [ (s-b) - 2 a phi^T]
-
-  //// compute [a phi], store in temp_1_
-  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)1.,
-  //                  top[0]->cpu_data(), this->blobs_[0]->cpu_data(),
-  //                  (Dtype)0., temp_1_.mutable_cpu_data());
-
-  //caffe_scal(temp_1_.count(), (Dtype)2.0, temp_1_.mutable_cpu_data());
-
-  //// compute (s - b) - [2a phi^T], store in temp_1_
-  //caffe_sub(biased_input_.count(), biased_input_.cpu_data(), 
-  //        temp_1_.cpu_data(), temp_1_.mutable_cpu_data());
-
-  //// scale [...] by eta_
-  //caffe_scal(temp_1_.count(), eta_, temp_1_.mutable_cpu_data());
-
-
-  // compute top_diff^T [...], store in weight_diff
-  caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
-                     top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
-                     this->blobs_[0]->mutable_cpu_diff());
 
   // Weight
   caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, (Dtype)eta_,
@@ -280,15 +258,27 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
       bottom[0]->mutable_cpu_diff());
 
+  ////weight gradient should be:
+  ////     eta_ [ (s-b) - 2 a phi^T]
 
-  //std::cerr<<"\n";
-  //for (int i=0; i<L_; ++i) {
-  //    std::cerr<<"weights_"<<i<<": "<<this->blobs_[0]->cpu_diff()[i]<<"\n";
-  //}
-  //for (int i=0; i<L_; ++i) {
-  //    std::cerr<<"bottom_"<<i<<": "<<bottom[0]->cpu_diff()[i]<<"\n";
-  //}
-  //std::cerr<<"\n";
+  //// compute [a phi], store in temp_1_
+  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)1.,
+  //                  top[0]->cpu_data(), this->blobs_[0]->cpu_data(),
+  //                  (Dtype)0., temp_1_.mutable_cpu_data());
+
+  //caffe_scal(temp_1_.count(), (Dtype)2.0, temp_1_.mutable_cpu_data());
+
+  //// compute (s - b) - [2a phi^T], store in temp_1_
+  //caffe_sub(biased_input_.count(), biased_input_.cpu_data(), 
+  //        temp_1_.cpu_data(), temp_1_.mutable_cpu_data());
+
+  //// scale [...] by eta_
+  //caffe_scal(temp_1_.count(), eta_, temp_1_.mutable_cpu_data());
+
+  //// compute top_diff^T [...], store in weight_diff
+  //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
+  //                   top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
+  //                   this->blobs_[0]->mutable_cpu_diff());
 }
 
 #ifdef CPU_ONLY
