@@ -51,7 +51,7 @@ void SparseApproxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
 
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
-        this->layer_param_.inner_product_param().bias_filler()));
+        this->layer_param_.sparse_approx_param().bias_filler()));
       bias_filler->Fill(this->blobs_[1].get());
   } 
 }
@@ -194,9 +194,6 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
     // Weight
     // Last iteration (in time)
-    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, eta_,
-    //         top[0]->cpu_diff(), bottom[0]->cpu_data(), (Dtype)1.,
-    //         this->blobs_[0]->mutable_cpu_diff());
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, eta_,
              top[0]->cpu_diff(), biased_input_.cpu_data(), (Dtype)1.,
              this->blobs_[0]->mutable_cpu_diff());
