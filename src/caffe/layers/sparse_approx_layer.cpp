@@ -80,6 +80,8 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   competition_matrix_.Reshape(competition_matrix_shape);
 
   backprop_multiplier_.Reshape(competition_matrix_shape);
+  caffe_set(backprop_multiplier_.count(), (Dtype)1.,
+            backprop_multiplier_.mutable_cpu_data());
   
   // Set size of top blob (BxM)
   vector<int> top_shape(2);
@@ -190,22 +192,41 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
-    // top_diff needs to be scaled for back_prop through time
-    for (int iteration = 1; iteration < num_iterations_; ++iteration) {
-        // tdiff = tdiff - eta tdiff G
-        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_, 
-                    -eta_, top[0]->cpu_diff(), competition_matrix_.cpu_data(),
-                    (Dtype)1., top[0]->mutable_cpu_diff());
-    }
-
     // Weight
-    // First iteration
+    // Last iteration (in time)
+    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, eta_,
+    //         top[0]->cpu_diff(), bottom[0]->cpu_data(), (Dtype)1.,
+    //         this->blobs_[0]->mutable_cpu_diff());
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, eta_,
-             top[0]->cpu_diff(), bottom[0]->cpu_data(), (Dtype)1.,
+             top[0]->cpu_diff(), biased_input_.cpu_data(), (Dtype)1.,
              this->blobs_[0]->mutable_cpu_diff());
 
-    // Next iterations
-    for (int iteration = 1; iteration < num_iterations_; ++iteration) {
+    // Bias
+    // sum top over B
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
+                        batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
+                        (Dtype)0., sum_top_diff_.mutable_cpu_data());
+    // multiply by phi
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, M_, (Dtype)-eta_,
+                        sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
+                        (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
+
+    // Input
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)eta_,
+        top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
+        bottom[0]->mutable_cpu_diff());
+
+    // Scalar for top_diff through time is (1 - eta_ G)
+    caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
+            backprop_multiplier_.mutable_cpu_data());
+
+    // Earlier iterations in time
+    for (int iteration = num_iterations_-1; iteration > 1; --iteration) {
+        // tdiff = tdiff (1 - eta_ G)
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_, 
+                    (Dtype)1., top[0]->cpu_diff(), backprop_multiplier_.cpu_data(),
+                    (Dtype)1., top[0]->mutable_cpu_diff());
+
         //weight gradient should be:
         //     eta_ [ (s-b) - 2 a phi^T]
 
@@ -222,23 +243,21 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
                            top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
                            this->blobs_[0]->mutable_cpu_diff());
+        // Bias
+        // sum top over B
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
+                            batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
+                            (Dtype)0., sum_top_diff_.mutable_cpu_data());
+        // multiply by phi
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, M_, (Dtype)-eta_,
+                            sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
+                            (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
+
+        // Input
+        caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)eta_,
+            top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
+            bottom[0]->mutable_cpu_diff());
     }
-
-    // Bias
-    // sum top over B
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
-                        batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
-                        (Dtype)0., sum_top_diff_.mutable_cpu_data());
-
-    // multiply by phi
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, M_, (Dtype)-eta_,
-                        sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
-                        (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
-
-    // Input
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)eta_,
-        top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
-        bottom[0]->mutable_cpu_diff());
 
 }
 
