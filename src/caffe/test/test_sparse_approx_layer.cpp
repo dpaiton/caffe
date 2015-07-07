@@ -195,9 +195,9 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
     SparseApproxParameter* sparse_approx_param =
               layer_param.mutable_sparse_approx_param();
 
-    //sparse_approx_param->set_num_iterations(1);
+    sparse_approx_param->set_num_iterations(2);
     sparse_approx_param->set_num_elements(1);
-    sparse_approx_param->set_eta(10);
+    sparse_approx_param->set_eta(0.01);
     sparse_approx_param->set_lambda(0);
     //sparse_approx_param->set_gamma(-FLT_MAX);
 
@@ -205,8 +205,8 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
 
     // Set weights
     sparse_approx_param->mutable_weight_filler()->set_type("uniform");
-    sparse_approx_param->mutable_weight_filler()->set_min(0.1);
-    sparse_approx_param->mutable_weight_filler()->set_max(1);
+    sparse_approx_param->mutable_weight_filler()->set_min(0.01);
+    sparse_approx_param->mutable_weight_filler()->set_max(0.1);
 
     // Set bias
     sparse_approx_param->mutable_bias_filler()->set_type("uniform");
