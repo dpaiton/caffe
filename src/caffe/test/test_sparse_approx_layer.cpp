@@ -204,18 +204,20 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
     sparse_approx_param->set_bias_term(true);
 
     // Set weights
-    sparse_approx_param->mutable_weight_filler()->set_type("gaussian");
-    sparse_approx_param->mutable_weight_filler()->set_min(0);
+    sparse_approx_param->mutable_weight_filler()->set_type("uniform");
+    sparse_approx_param->mutable_weight_filler()->set_min(0.1);
     sparse_approx_param->mutable_weight_filler()->set_max(1);
 
     // Set bias
-    sparse_approx_param->mutable_bias_filler()->set_type("gaussian");
-    sparse_approx_param->mutable_bias_filler()->set_min(0);
-    sparse_approx_param->mutable_bias_filler()->set_max(0);
+    sparse_approx_param->mutable_bias_filler()->set_type("uniform");
+    sparse_approx_param->mutable_bias_filler()->set_min(0.1);
+    sparse_approx_param->mutable_bias_filler()->set_max(1);
 
     SparseApproxLayer<Dtype> layer(layer_param);
 
-    GradientChecker<Dtype> checker(1e-2, 1e-3);
+    Dtype stepsize  = 1e-2;
+    Dtype threshold = 1e-3;
+    GradientChecker<Dtype> checker(stepsize, threshold);
 
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
          this->blob_top_vec_);

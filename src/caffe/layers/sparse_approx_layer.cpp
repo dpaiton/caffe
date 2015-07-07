@@ -116,14 +116,18 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
 
-  //// Replicate bias vector into batch x pixel matrix
-  //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, B_, L_, 1, (Dtype)0.,
-  //              batch_multiplier_.cpu_data(), this->blobs_[1]->cpu_data(), (Dtype)0.,
-  //              temp_1_.mutable_cpu_data());
+  // Replicate bias vector into batch x pixel matrix
+  caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, B_, L_, 1, (Dtype)1.,
+                batch_multiplier_.cpu_data(), this->blobs_[1]->cpu_data(), (Dtype)0.,
+                temp_1_.mutable_cpu_data());
 
-  //// Subtract bias values from input
-  //caffe_sub(bottom[0]->count(), bottom[0]->cpu_data(), temp_1_.cpu_data(), 
-  //          biased_input_.mutable_cpu_data());
+  // Subtract bias values from input
+  caffe_sub(bottom[0]->count(), bottom[0]->cpu_data(), temp_1_.cpu_data(), 
+            biased_input_.mutable_cpu_data());
+
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
+          (Dtype)1., biased_input_.cpu_data(), weights, (Dtype)0.,
+          top[0]->mutable_cpu_data());
 
   //// ext - excitatory input
   //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_, (Dtype)1.,
@@ -143,9 +147,9 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   //****
   //WORKS:
   //****
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
-          (Dtype)1., bottom[0]->cpu_data(), weights, (Dtype)0.,
-          top[0]->mutable_cpu_data());
+  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
+  //        (Dtype)1., bottom[0]->cpu_data(), weights, (Dtype)0.,
+  //        top[0]->mutable_cpu_data());
   //****
   //****
 
@@ -260,21 +264,31 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
            top[0]->cpu_diff(), bottom[0]->cpu_data(), (Dtype)1.,
            this->blobs_[0]->mutable_cpu_diff());
 
-  //// Bias
-  //// sum top over B
-  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
-  //                    batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
-  //                    (Dtype)0., sum_top_diff_.mutable_cpu_data());
+  // Bias
+  // sum top over B
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
+                      batch_multiplier_.cpu_data(), top[0]->cpu_diff(), 
+                      (Dtype)0., sum_top_diff_.mutable_cpu_data());
 
-  //// multiply by phi
-  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, M_, (Dtype)1.,
-  //                    sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
-  //                    (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
+  // multiply by phi
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, L_, M_, (Dtype)-1.,
+                      sum_top_diff_.cpu_data(), this->blobs_[0]->cpu_data(),
+                      (Dtype)0., this->blobs_[1]->mutable_cpu_diff());
 
   // Input
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)1.,
       top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
       bottom[0]->mutable_cpu_diff());
+
+
+  std::cerr<<"\n";
+  for (int i=0; i<L_; ++i) {
+      std::cerr<<"weights_"<<i<<": "<<this->blobs_[0]->cpu_diff()[i]<<"\n";
+  }
+  for (int i=0; i<L_; ++i) {
+      std::cerr<<"bottom_"<<i<<": "<<bottom[0]->cpu_diff()[i]<<"\n";
+  }
+  std::cerr<<"\n";
 }
 
 #ifdef CPU_ONLY
