@@ -106,7 +106,6 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   temp_shape[0] = B_;
   temp_shape[1] = L_;
   temp_1_.Reshape(temp_shape);
-  temp_2_.Reshape(temp_shape);
 
   vector<int> sum_top_diff_shape(1,M_);
   sum_top_diff_.Reshape(sum_top_diff_shape);
@@ -117,15 +116,6 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
 
   const Dtype* weights = this->blobs_[0]->cpu_data(); // phi
-
-  //****
-  //WORKS:
-  //****
-  //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_,
-  //        (Dtype)1., bottom[0]->cpu_data(), weights, (Dtype)0.,
-  //        top[0]->mutable_cpu_data());
-  //****
-  //****
 
   // Replicate bias vector into batch x pixel matrix
   caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, B_, L_, 1, (Dtype)1.,
@@ -218,16 +208,17 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             backprop_multiplier_.mutable_cpu_data());
 
     // Earlier iterations in time
-    for (int iteration = num_iterations_-1; iteration > 1; --iteration) {
+    for (int iteration = num_iterations_-2; iteration >= 0; --iteration) {
         // tdiff = tdiff (1 - eta_ G)
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_, 
                     (Dtype)1., top[0]->cpu_diff(), backprop_multiplier_.cpu_data(),
                     (Dtype)1., top[0]->mutable_cpu_diff());
+    }
 
         //weight gradient should be:
         //     eta_ [ (s-b) - 2 a phi^T]
 
-        // compute [2 a phi], store in temp_1_
+        // compute [2 a phi^T], store in temp_1_
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)2.0,
                           top[0]->cpu_data(), this->blobs_[0]->cpu_data(),
                           (Dtype)0., temp_1_.mutable_cpu_data());
@@ -237,8 +228,8 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                       -eta_, temp_1_.mutable_cpu_data());
 
         // compute top_diff^T [...], store in weight_diff
-        caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, L_, M_, B_, (Dtype)1.,
-                           top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
+        caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, (Dtype)1.,
+                           top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)0.,
                            this->blobs_[0]->mutable_cpu_diff());
         // Bias
         // sum top over B
@@ -254,7 +245,6 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)eta_,
             top[0]->cpu_diff(), this->blobs_[0]->cpu_data(), (Dtype)0.,
             bottom[0]->mutable_cpu_diff());
-    }
 
 }
 
