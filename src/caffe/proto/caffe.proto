@@ -269,8 +269,8 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 138
-// (last added: sparse_approx_param)
+// LayerParameter next available layer-specific ID: 139
+// (last added: sparse_single_param)
 
 message LayerParameter {
   optional string name = 1; // the layer name
@@ -335,6 +335,7 @@ message LayerParameter {
   optional ImageDataParameter image_data_param = 115;
   optional InfogainLossParameter infogain_loss_param = 116;
   optional SparseApproxParameter sparse_approx_param = 137;
+  optional SparseSingleParameter sparse_single_param = 138;
   optional InnerProductParameter inner_product_param = 117;
   optional LogParameter log_param = 134;
   optional LRNParameter lrn_param = 118;
@@ -612,6 +613,19 @@ message ImageDataParameter {
 message InfogainLossParameter {
   // Specify the infogain matrix source.
   optional string source = 1;
+}
+
+message SparseSingleParameter {
+  optional FillerParameter weight_filler = 1; // The filler for the weight
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter bias_filler = 3; // The filler for the bias
+
+  // num_elements will determine overcompleteness
+  // e.g. for 2x overcomplete, num_elements = num pixels in input patch * 2
+  optional int32 num_elements = 4 [default = 128];
+
+  optional float lambda = 6 [default = 0.1];
+  optional float eta = 7 [default = 0.001];
 }
 
 message SparseApproxParameter {
