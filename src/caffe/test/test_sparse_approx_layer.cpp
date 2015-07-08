@@ -75,7 +75,7 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
                             a_sum += std::abs(activity->cpu_data()[activity->offset(b, m)]);
                         }
                         inner_term += input->cpu_data()[input->offset(b, c, h, w)] - 
-                                      weights->cpu_data()[weights->offset(c*h*w+h*w+w, m)] * 
+                                      weights->cpu_data()[weights->offset(m, c*h*w+h*w+w)] * 
                                       activity->cpu_data()[activity->offset(b, m)] - 
                                       bias->cpu_data()[c*h*w+h*w+w];
                     }
