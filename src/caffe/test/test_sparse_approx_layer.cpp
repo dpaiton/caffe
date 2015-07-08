@@ -195,9 +195,9 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
     SparseApproxParameter* sparse_approx_param =
               layer_param.mutable_sparse_approx_param();
 
-    sparse_approx_param->set_num_iterations(1);
+    sparse_approx_param->set_num_iterations(2);
     sparse_approx_param->set_num_elements(1);
-    sparse_approx_param->set_eta(10);
+    sparse_approx_param->set_eta(1);
     sparse_approx_param->set_lambda(0);
     //sparse_approx_param->set_gamma(-FLT_MAX);
 
