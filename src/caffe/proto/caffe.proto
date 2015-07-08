@@ -620,10 +620,6 @@ message SparseSingleParameter {
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
   optional FillerParameter bias_filler = 3; // The filler for the bias
 
-  // num_elements will determine overcompleteness
-  // e.g. for 2x overcomplete, num_elements = num pixels in input patch * 2
-  optional int32 num_elements = 4 [default = 128];
-
   optional float lambda = 6 [default = 0.1];
   optional float eta = 7 [default = 0.001];
 }
