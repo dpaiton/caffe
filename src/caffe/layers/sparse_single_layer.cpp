@@ -168,21 +168,6 @@ void SparseSingleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, (Dtype)1.,
                        top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
                        this->blobs_[0]->mutable_cpu_diff());
-
-/*
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, (Dtype)1.,
-                        top[0]->cpu_diff(), biased_input_.cpu_data(), (Dtype)0.,
-                        this->blobs_[0]->mutable_cpu_diff());
-
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)-2.,
-                      bottom[1]->cpu_data(), this->blobs_[0]->cpu_data(),
-                      (Dtype)0., temp_1_.mutable_cpu_data());
-
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)1.,
-                       top[0]->cpu_diff(), temp_1_.cpu_data(),
-                       (Dtype)1., this->blobs_[0]->mutable_cpu_diff()); 
-*/
-
     // Bias
     // sum top over B, then multiply by phi
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, M_, B_, (Dtype)1.,
