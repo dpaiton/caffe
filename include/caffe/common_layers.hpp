@@ -330,7 +330,8 @@ class SparseSingleLayer: public Layer<Dtype> {
   Blob<Dtype> biased_input_;        // BxL
   Blob<Dtype> excitatory_input_;    // <input, phi^T> has dim BxM
   Blob<Dtype> competition_matrix_;  // <phi^T , phi> has dim MxM
-  Blob<Dtype> batch_multiplier_;    // for summing along one dim of matrix
+  Blob<Dtype> batch_multiplier_;    // for summing along batch dim of matrix (1xB)
+  Blob<Dtype> weight_multiplier_;     // for summing along num weight dim of matrix (1xM)
   Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
 };
 

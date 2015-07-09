@@ -32,8 +32,13 @@ class SparseSingleLayerTest : public MultiDeviceTest<TypeParam> {
   //create blob -> batch=3; channels=3 (RGB); pixels = 4 (2x2)
   SparseSingleLayerTest()
       : blob_bottom_0_(new Blob<Dtype>(1, 1, 2, 2)),
-        blob_bottom_1_(new Blob<Dtype>(1, 2, 1, 1)),
+        blob_bottom_1_(new Blob<Dtype>()),
         blob_top_(new Blob<Dtype>()) {
+
+    vector<int> bot_1_shape(2);
+    bot_1_shape[0] = 1; // B_
+    bot_1_shape[1] = 3; // M_
+    blob_bottom_1_->Reshape(bot_1_shape);
 
     // fill the values
     FillerParameter filler_param;
@@ -192,19 +197,19 @@ TYPED_TEST(SparseSingleLayerTest, TestGradient) {
     SparseSingleParameter* sparse_single_param =
               layer_param.mutable_sparse_single_param();
 
-    sparse_single_param->set_eta(2);
-    sparse_single_param->set_lambda(0.1);
+    sparse_single_param->set_eta(1);
+    sparse_single_param->set_lambda(0);
     sparse_single_param->set_bias_term(true);
 
     // Set weights
     sparse_single_param->mutable_weight_filler()->set_type("uniform");
-    sparse_single_param->mutable_weight_filler()->set_min(0.01);
-    sparse_single_param->mutable_weight_filler()->set_max(0.1);
+    sparse_single_param->mutable_weight_filler()->set_min(1);
+    sparse_single_param->mutable_weight_filler()->set_max(1);
 
     // Set bias
     sparse_single_param->mutable_bias_filler()->set_type("uniform");
-    sparse_single_param->mutable_bias_filler()->set_min(0.1);
-    sparse_single_param->mutable_bias_filler()->set_max(1);
+    sparse_single_param->mutable_bias_filler()->set_min(0);
+    sparse_single_param->mutable_bias_filler()->set_max(0);
 
     SparseSingleLayer<Dtype> layer(layer_param);
 

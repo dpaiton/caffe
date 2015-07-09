@@ -13,9 +13,8 @@ template <typename Dtype>
 void SparseSingleLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  eta_            = this->layer_param_.sparse_single_param().eta();
-  lambda_         = this->layer_param_.sparse_single_param().lambda();
-
+  eta_       = this->layer_param_.sparse_single_param().eta();
+  lambda_    = this->layer_param_.sparse_single_param().lambda();
   bias_term_ = this->layer_param_.sparse_single_param().bias_term();
 
   //Find variables B_, L_, M_
@@ -69,8 +68,13 @@ void SparseSingleLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   competition_matrix_.Reshape(competition_matrix_shape);
 
   backprop_multiplier_.Reshape(competition_matrix_shape);
-  caffe_set(backprop_multiplier_.count(), (Dtype)1.,
+  // Set backprop multiplier to identity matrix
+
+  caffe_set(backprop_multiplier_.count(), (Dtype)0.,
             backprop_multiplier_.mutable_cpu_data());
+  for (int i = 0; i < M_; i++) {
+    backprop_multiplier_.mutable_cpu_data()[i*M_+i] = 1;
+  }
   
   // Set size of top blob (BxM)
   vector<int> top_shape(2);
@@ -83,6 +87,10 @@ void SparseSingleLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     batch_multiplier_.Reshape(batch_mult_shape);
     caffe_set(B_, (Dtype)1., batch_multiplier_.mutable_cpu_data());
   }
+
+  vector<int> weight_mult_shape(1, M_);
+  weight_multiplier_.Reshape(weight_mult_shape);
+  caffe_set(M_, (Dtype)1., weight_multiplier_.mutable_cpu_data());
 
   // Forward pass variable
   excitatory_input_.Reshape(top[0]->shape());
@@ -117,7 +125,7 @@ void SparseSingleLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   caffe_sub(bottom[0]->count(), bottom[0]->cpu_data(), temp_1_.cpu_data(), 
             biased_input_.mutable_cpu_data());
 
-  // Inhibition matrix (G matrix)
+  // Competition matrix (G matrix)
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, M_, L_,
           (Dtype)1., weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
@@ -184,14 +192,13 @@ void SparseSingleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         bottom[0]->mutable_cpu_diff());
 
     // Input_1
-    // diff = tdiff ( 1 - eta_ G )
+    // diff = tdiff ( I - eta_ G )
     caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
             backprop_multiplier_.mutable_cpu_data());
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_, 
                     (Dtype)1., top[0]->cpu_diff(), backprop_multiplier_.cpu_data(),
                     (Dtype)0., bottom[1]->mutable_cpu_diff());
-
 }
 
 #ifdef CPU_ONLY
