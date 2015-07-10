@@ -80,8 +80,6 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   competition_matrix_.Reshape(competition_matrix_shape);
 
   backprop_multiplier_.Reshape(competition_matrix_shape);
-  caffe_set(backprop_multiplier_.count(), (Dtype)1.,
-            backprop_multiplier_.mutable_cpu_data());
   
   // Set size of top blob (BxM)
   vector<int> top_shape(2);
@@ -178,12 +176,21 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
+    // set backprop multiplier to identity matrix
+    caffe_set(backprop_multiplier_.count(), (Dtype)0.,
+              backprop_multiplier_.mutable_cpu_data());
+
+    for (int i = 0; i < M_; ++i) {
+      backprop_multiplier_.mutable_cpu_data()[i*M_+i] = 1;
+    }
+
     // Scalar for top_diff through time is -eta_ G
-    // Compute 1 - eta_ G
+    // Compute I - eta_ G
     caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
             backprop_multiplier_.mutable_cpu_data());
 
     caffe_copy(top[0]->count(), top[0]->cpu_diff(), temp_tdiff_.mutable_cpu_diff());
+
     for (int iteration = num_iterations_-1; iteration >= 0; --iteration) {
         // Weights
         // weight gradient should be:
@@ -226,7 +233,7 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             bottom[0]->mutable_cpu_diff());
 
         // Update diff
-        // tdiff = tdiff (1 - eta_ G)
+        // tdiff = tdiff (I - eta_ G)
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, M_, M_, 
                         (Dtype)1., top[0]->cpu_diff(), backprop_multiplier_.cpu_data(),
                         (Dtype)0., temp_tdiff_.mutable_cpu_diff());

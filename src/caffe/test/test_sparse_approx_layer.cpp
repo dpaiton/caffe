@@ -197,7 +197,7 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
 
     sparse_approx_param->set_num_iterations(3);
     sparse_approx_param->set_num_elements(1);
-    sparse_approx_param->set_eta(5);
+    sparse_approx_param->set_eta(2);
     sparse_approx_param->set_lambda(0);
     //sparse_approx_param->set_gamma(-FLT_MAX);
 
