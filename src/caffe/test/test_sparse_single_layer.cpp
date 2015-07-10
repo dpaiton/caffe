@@ -37,16 +37,21 @@ class SparseSingleLayerTest : public MultiDeviceTest<TypeParam> {
 
     vector<int> bot_1_shape(2);
     bot_1_shape[0] = 1; // B_
-    bot_1_shape[1] = 3; // M_
+    bot_1_shape[1] = 2; // M_
     blob_bottom_1_->Reshape(bot_1_shape);
 
     // fill the values
     FillerParameter filler_param;
-    filler_param.set_min(0.5);
+    filler_param.set_min(1);
     filler_param.set_max(1);
     UniformFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_0_);
-    filler.Fill(this->blob_bottom_1_);
+
+    FillerParameter filler_param2;
+    filler_param2.set_min(0);
+    filler_param2.set_max(0.1);
+    UniformFiller<Dtype> filler2(filler_param2);
+    filler2.Fill(this->blob_bottom_1_);
 
     blob_bottom_vec_.push_back(blob_bottom_0_);
     blob_bottom_vec_.push_back(blob_bottom_1_);
