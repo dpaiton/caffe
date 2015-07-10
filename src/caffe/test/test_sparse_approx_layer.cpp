@@ -205,8 +205,8 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
 
     // Set weights
     sparse_approx_param->mutable_weight_filler()->set_type("uniform");
-    sparse_approx_param->mutable_weight_filler()->set_min(0.01);
-    sparse_approx_param->mutable_weight_filler()->set_max(0.1);
+    sparse_approx_param->mutable_weight_filler()->set_min(0);
+    sparse_approx_param->mutable_weight_filler()->set_max(0);
 
     // Set bias
     sparse_approx_param->mutable_bias_filler()->set_type("uniform");

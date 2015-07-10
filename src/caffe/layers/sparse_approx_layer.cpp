@@ -123,11 +123,11 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   caffe_sub(bottom[0]->count(), bottom[0]->cpu_data(), temp_1_.cpu_data(), 
             biased_input_.mutable_cpu_data());
 
-  // Inhibition matrix (G matrix)
+  // Competition matrix (G matrix)
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, M_, L_,
           (Dtype)1., weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
-  // ext - excitatory input
+  // Excitatory input (ext)
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, B_, M_, L_, (Dtype)1.,
           biased_input_.cpu_data(), weights, (Dtype)0.,
           excitatory_input_.mutable_cpu_data());
