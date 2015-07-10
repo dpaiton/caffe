@@ -163,25 +163,6 @@ void SparseSingleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     //weight gradient should be:
     //     eta_ ( (s-b) - 2 a[t-1] phi)
 
-    //std::cerr<<"\n";
-    //std::cerr<<"B_ "<<B_<<" M_ "<<M_<<" L_ "<<L_<<"\n--------\n";
-    //std::cerr<<"x[0]  = "<<bottom[0]->cpu_data()[0]<<"\n";
-    //std::cerr<<"x[1]  = "<<bottom[0]->cpu_data()[1]<<"\n";
-    //std::cerr<<"x[2]  = "<<bottom[0]->cpu_data()[2]<<"\n";
-    //std::cerr<<"x[3]  = "<<bottom[0]->cpu_data()[3]<<"\n";
-    //std::cerr<<"a0[0] = "<<bottom[1]->cpu_data()[0]<<"\n";
-    //std::cerr<<"a0[1] = "<<bottom[1]->cpu_data()[1]<<"\n";
-    //std::cerr<<"phi[0,0]= "<<this->blobs_[0]->cpu_data()[0]<<"\n";
-    //std::cerr<<"phi[0,1]= "<<this->blobs_[0]->cpu_data()[1]<<"\n";
-    //std::cerr<<"phi[0,2]= "<<this->blobs_[0]->cpu_data()[2]<<"\n";
-    //std::cerr<<"phi[0,3]= "<<this->blobs_[0]->cpu_data()[3]<<"\n";
-    //std::cerr<<"phi[1,0]= "<<this->blobs_[0]->cpu_data()[4]<<"\n";
-    //std::cerr<<"phi[1,1]= "<<this->blobs_[0]->cpu_data()[5]<<"\n";
-    //std::cerr<<"phi[1,2]= "<<this->blobs_[0]->cpu_data()[6]<<"\n";
-    //std::cerr<<"phi[1,3]= "<<this->blobs_[0]->cpu_data()[7]<<"\n";
-    //std::cerr<<"tdif[0] = "<<top[0]->cpu_diff()[0]<<"\n";
-    //std::cerr<<"tdif[1] = "<<top[0]->cpu_diff()[1]<<"\n";
-
     // compute (2 a[t-1] phi), store in temp_1_
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, B_, L_, M_, (Dtype)2.,
                       bottom[1]->cpu_data(), this->blobs_[0]->cpu_data(),
@@ -195,15 +176,6 @@ void SparseSingleLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, L_, B_, (Dtype)1.,
                        top[0]->cpu_diff(), temp_1_.cpu_data(), (Dtype)1.,
                        this->blobs_[0]->mutable_cpu_diff());
-
-    //std::cerr<<"diff[0,0] = "<<this->blobs_[0]->cpu_diff()[0]<<"\n";
-    //std::cerr<<"diff[0,1] = "<<this->blobs_[0]->cpu_diff()[1]<<"\n";
-    //std::cerr<<"diff[0,2] = "<<this->blobs_[0]->cpu_diff()[2]<<"\n";
-    //std::cerr<<"diff[0,3] = "<<this->blobs_[0]->cpu_diff()[3]<<"\n";
-    //std::cerr<<"diff[1,0] = "<<this->blobs_[0]->cpu_diff()[4]<<"\n";
-    //std::cerr<<"diff[1,1] = "<<this->blobs_[0]->cpu_diff()[5]<<"\n";
-    //std::cerr<<"diff[1,2] = "<<this->blobs_[0]->cpu_diff()[6]<<"\n";
-    //std::cerr<<"diff[1,3] = "<<this->blobs_[0]->cpu_diff()[7]<<"\n";
 
     // Bias
     // sum top over B, then multiply by phi
