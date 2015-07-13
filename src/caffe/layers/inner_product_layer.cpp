@@ -108,8 +108,8 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
   // Inhibitory input
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, N_, (Dtype)1.,
-      bot_activity, competition_matrix_.cpu_data(), (Dtype)-1., top_data);
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, N_, (Dtype)-1.,
+      bot_activity, competition_matrix_.cpu_data(), (Dtype)1., top_data);
 }
 
 template <typename Dtype>
@@ -126,8 +126,8 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         bottom_activity, weight, (Dtype)0., temp_1_.mutable_cpu_data());
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
         top_diff, bottom_data, (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
-        top_diff, temp_1_.cpu_data(), (Dtype)-1., this->blobs_[0]->mutable_cpu_diff());
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)-1.,
+        top_diff, temp_1_.cpu_data(), (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->cpu_diff();
