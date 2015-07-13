@@ -410,7 +410,7 @@ class InnerProductLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "InnerProduct"; }
-  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -427,7 +427,10 @@ class InnerProductLayer : public Layer<Dtype> {
   int K_;
   int N_;
   bool bias_term_;
+  Blob<Dtype> temp_1_;
+  Blob<Dtype> competition_matrix_; 
   Blob<Dtype> bias_multiplier_;
+  Blob<Dtype> backprop_multiplier_; 
 };
 
 /**

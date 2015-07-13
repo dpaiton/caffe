@@ -145,7 +145,7 @@ void SparseSingleLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   caffe_add(top[0]->count(), excitatory_input_.cpu_data(), bottom[1]->cpu_data(), top[0]->mutable_cpu_data());
 
   // Add -eta bottom[1] competition_matrix_ to top
-  caffe_axpy(top[0]->count, -eta_, temp_2_.cpu_data(), top[0]->mutable_cpu_data());
+  caffe_axpy(top[0]->count(), -eta_, temp_2_.cpu_data(), top[0]->mutable_cpu_data());
 
   // Compute sgn on previous a's, store in temp_2_
   caffe_cpu_sign(top[0]->count(), bottom[1]->cpu_data(), temp_2_.mutable_cpu_data());
