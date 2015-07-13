@@ -69,6 +69,11 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   top_shape.resize(axis + 1);
   top_shape[axis] = N_;
   top[0]->Reshape(top_shape);
+  // Set size of competition matrix
+  vector<int> competition_matrix_shape(2);
+  competition_matrix_shape[0] = N_;
+  competition_matrix_shape[1] = N_;
+  competition_matrix_.Reshape(competition_matrix_shape);
   // Set up the bias multiplier
   if (bias_term_) {
     vector<int> bias_shape(1, M_);
