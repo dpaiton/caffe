@@ -120,8 +120,8 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         bottom[0]->mutable_cpu_diff());
   }
   const Dtype* top_diff = top[0]->cpu_diff();
-  caffe_copy(bottom[1]->count(), top_diff, bottom[1]->mutable_cpu_data());
-  caffe_scal(bottom[1]->count(), (Dtype)-1., bottom[1]->mutable_cpu_data());
+  caffe_copy(bottom[1]->count(), top_diff, bottom[1]->mutable_cpu_diff());
+  caffe_scal(bottom[1]->count(), (Dtype)-1., bottom[1]->mutable_cpu_diff());
 }
 
 #ifdef CPU_ONLY
