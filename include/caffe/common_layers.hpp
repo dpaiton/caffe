@@ -291,6 +291,51 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Performs single iteration of sparse approximation following 
+ *        dynamics described in Rozell et al. 2008
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ **/
+template <typename Dtype>
+class SparseSingleLayer: public Layer<Dtype> {
+ public:
+  explicit SparseSingleLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "SparseSingle"; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int M_; // Num neurons (also num basis vectors)
+  int L_; // Num pixels in input (also length of basis vectors)
+  int B_; // Batch size
+  Dtype lambda_, eta_;
+  bool bias_term_;
+
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_;
+  Blob<Dtype> biased_input_;        // BxL
+  Blob<Dtype> excitatory_input_;    // <input, phi^T> has dim BxM
+  Blob<Dtype> competition_matrix_;  // <phi^T , phi> has dim MxM
+  Blob<Dtype> batch_multiplier_;    // for summing along batch dim of matrix (1xB)
+  Blob<Dtype> weight_multiplier_;     // for summing along num weight dim of matrix (1xM)
+  Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
+};
+
+/**
  * @brief Performs sparse approximation following dynamics described in
  *        Rozell et al. 2008
  *
@@ -365,7 +410,7 @@ class InnerProductLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "InnerProduct"; }
-  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -382,7 +427,10 @@ class InnerProductLayer : public Layer<Dtype> {
   int K_;
   int N_;
   bool bias_term_;
+  Blob<Dtype> temp_1_;
+  Blob<Dtype> competition_matrix_; 
   Blob<Dtype> bias_multiplier_;
+  Blob<Dtype> backprop_multiplier_; 
 };
 
 /**
