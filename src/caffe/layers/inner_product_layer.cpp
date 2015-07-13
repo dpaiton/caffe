@@ -96,7 +96,7 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   temp_1_shape[1] = K_;
   temp_1_.Reshape(temp_1_shape);
 
-  // Set backprop_multiplier_ (dim MxM) to identity matrix
+  // Set backprop_multiplier_ (dim N_xN_) to identity matrix
   backprop_multiplier_.Reshape(competition_matrix_shape);
   caffe_set(backprop_multiplier_.count(), (Dtype)0.,
             backprop_multiplier_.mutable_cpu_data());
@@ -183,7 +183,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
     // Gradient with respect to bottom activity data
     // diff = tdiff ( I - eta_ G )
-    caffe_axpy(backprop_multiplier_.count(), (Dtype)1., competition_matrix_.cpu_data(),
+    caffe_axpy(backprop_multiplier_.count(), (Dtype)-1., competition_matrix_.cpu_data(),
           backprop_multiplier_.mutable_cpu_data());
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, N_, (Dtype)1.,
