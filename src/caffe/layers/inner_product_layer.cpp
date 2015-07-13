@@ -81,6 +81,7 @@ template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* bot_activity = bottom[1]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const Dtype* weight = this->blobs_[0]->cpu_data();
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
@@ -90,6 +91,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
+  caffe_axpy(top[0]->count(), (Dtype)1., bot_activity, top_data);
 }
 
 template <typename Dtype>
