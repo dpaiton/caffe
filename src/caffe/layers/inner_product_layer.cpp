@@ -81,6 +81,7 @@ template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* bot_activity = bottom[1]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const Dtype* weight = this->blobs_[0]->cpu_data();
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
@@ -90,6 +91,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
+  caffe_sub(top[0]->count(), top[0]->cpu_data(), bot_activity, top_data);
 }
 
 template <typename Dtype>
@@ -117,6 +119,9 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         top_diff, this->blobs_[0]->cpu_data(), (Dtype)0.,
         bottom[0]->mutable_cpu_diff());
   }
+  const Dtype* top_diff = top[0]->cpu_diff();
+  caffe_copy(bottom[1]->count(), top_diff, bottom[1]->mutable_cpu_diff());
+  caffe_scal(bottom[1]->count(), (Dtype)-1., bottom[1]->mutable_cpu_diff());
 }
 
 #ifdef CPU_ONLY
