@@ -65,35 +65,35 @@ TYPED_TEST(InnerProductLayerTest, TestSetUp) {
   EXPECT_EQ(this->blob_top_->channels(), 10);
 }
 
-TYPED_TEST(InnerProductLayerTest, TestForward) {
-  typedef typename TypeParam::Dtype Dtype;
-  bool IS_VALID_CUDA = false;
-#ifndef CPU_ONLY
-  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
-#endif
-  if (Caffe::mode() == Caffe::CPU ||
-      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-    LayerParameter layer_param;
-    InnerProductParameter* inner_product_param =
-        layer_param.mutable_inner_product_param();
-    inner_product_param->set_num_output(10);
-    inner_product_param->mutable_weight_filler()->set_type("uniform");
-    inner_product_param->mutable_bias_filler()->set_type("uniform");
-    inner_product_param->mutable_bias_filler()->set_min(1);
-    inner_product_param->mutable_bias_filler()->set_max(2);
-    shared_ptr<InnerProductLayer<Dtype> > layer(
-        new InnerProductLayer<Dtype>(layer_param));
-    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    const Dtype* data = this->blob_top_->cpu_data();
-    const int count = this->blob_top_->count();
-    for (int i = 0; i < count; ++i) {
-      EXPECT_GE(data[i], 1.);
-    }
-  } else {
-    LOG(ERROR) << "Skipping test due to old architecture.";
-  }
-}
+//TYPED_TEST(InnerProductLayerTest, TestForward) {
+//  typedef typename TypeParam::Dtype Dtype;
+//  bool IS_VALID_CUDA = false;
+//#ifndef CPU_ONLY
+//  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
+//#endif
+//  if (Caffe::mode() == Caffe::CPU ||
+//      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
+//    LayerParameter layer_param;
+//    InnerProductParameter* inner_product_param =
+//        layer_param.mutable_inner_product_param();
+//    inner_product_param->set_num_output(10);
+//    inner_product_param->mutable_weight_filler()->set_type("uniform");
+//    inner_product_param->mutable_bias_filler()->set_type("uniform");
+//    inner_product_param->mutable_bias_filler()->set_min(1);
+//    inner_product_param->mutable_bias_filler()->set_max(2);
+//    shared_ptr<InnerProductLayer<Dtype> > layer(
+//        new InnerProductLayer<Dtype>(layer_param));
+//    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+//    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+//    const Dtype* data = this->blob_top_->cpu_data();
+//    const int count = this->blob_top_->count();
+//    for (int i = 0; i < count; ++i) {
+//      EXPECT_GE(data[i], 1.);
+//    }
+//  } else {
+//    LOG(ERROR) << "Skipping test due to old architecture.";
+//  }
+//}
 
 TYPED_TEST(InnerProductLayerTest, TestGradient) {
   typedef typename TypeParam::Dtype Dtype;
