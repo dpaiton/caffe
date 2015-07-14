@@ -79,7 +79,7 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   temp_1_shape[0] = M_;
   temp_1_shape[1] = K_;
   temp_1_.Reshape(temp_1_shape);
-  // Set backprop_multiplier_ (dim N_xN_)
+  // Set size of backprop_multiplier_
   backprop_multiplier_.Reshape(competition_matrix_shape);
   // Set up the bias multiplier
   if (bias_term_) {
@@ -97,7 +97,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* top_data = top[0]->mutable_cpu_data();
   const Dtype* weight = this->blobs_[0]->cpu_data();
   // Competition matrix
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, M_, K_, (Dtype)1.,
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, N_, K_, (Dtype)1.,
       weight, weight, (Dtype)0., competition_matrix_.mutable_cpu_data());
   // Excitatory input
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
