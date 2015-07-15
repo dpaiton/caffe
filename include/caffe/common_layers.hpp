@@ -324,7 +324,10 @@ class InnerProductLayer : public Layer<Dtype> {
   int K_;
   int N_;
   bool bias_term_;
+  Blob<Dtype> temp_1_, temp_2_;
+  Blob<Dtype> competition_matrix_; 
   Blob<Dtype> bias_multiplier_;
+  Blob<Dtype> backprop_multiplier_;
 };
 
 /**

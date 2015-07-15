@@ -30,7 +30,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     } else {
       this->blobs_.resize(1);
     }
-    // Intialize the weight
+    // Intialize the weights
     vector<int> weight_shape(2);
     weight_shape[0] = N_;
     weight_shape[1] = K_;
@@ -69,6 +69,21 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   top_shape.resize(axis + 1);
   top_shape[axis] = N_;
   top[0]->Reshape(top_shape);
+  // Set size of competition matrix
+  vector<int> competition_matrix_shape(2);
+  competition_matrix_shape[0] = N_;
+  competition_matrix_shape[1] = N_;
+  competition_matrix_.Reshape(competition_matrix_shape);
+  // temp vars for backward pass
+  vector<int> temp_shape(2);
+  temp_shape[0] = M_;
+  temp_shape[1] = K_;
+  temp_1_.Reshape(temp_shape);
+  temp_shape[0] = N_;
+  temp_shape[1] = N_;
+  temp_2_.Reshape(temp_shape);
+  // Set size of backprop_multiplier_
+  backprop_multiplier_.Reshape(competition_matrix_shape);
   // Set up the bias multiplier
   if (bias_term_) {
     vector<int> bias_shape(1, M_);
@@ -83,15 +98,21 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bot_activity = bottom[1]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
-  const Dtype* weight = this->blobs_[0]->cpu_data();
+  const Dtype* weights = this->blobs_[0]->cpu_data();
+  // Competition matrix
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, N_, K_, (Dtype)1.,
+      weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
+  // Excitatory input
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
-      bottom_data, weight, (Dtype)0., top_data);
+      bottom_data, weights, (Dtype)0., top_data);
   if (bias_term_) {
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
-  caffe_sub(top[0]->count(), top[0]->cpu_data(), bot_activity, top_data);
+  // Inhibitory input
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, N_, (Dtype)-1.,
+      bot_activity, competition_matrix_.cpu_data(), (Dtype)1., top_data);
 }
 
 template <typename Dtype>
@@ -101,9 +122,20 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (this->param_propagate_down_[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* bottom_data = bottom[0]->cpu_data();
-    // Gradient with respect to weight
+    const Dtype* bottom_activity = bottom[1]->cpu_data();
+    const Dtype* weights = this->blobs_[0]->cpu_data();
+    Dtype* weights_diff  = this->blobs_[0]->mutable_cpu_diff();
+    // Gradient with respect to weights
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
+        bottom_activity, weights, (Dtype)0., temp_1_.mutable_cpu_data());
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, N_, M_, (Dtype)1.,
+        top_diff, bottom_activity, (Dtype)0., temp_2_.mutable_cpu_data());
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
-        top_diff, bottom_data, (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+        top_diff, temp_1_.cpu_data(), (Dtype)1., weights_diff);
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, N_, (Dtype)1.,
+        temp_2_.cpu_data(), weights, (Dtype)1., weights_diff);
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
+        top_diff, bottom_data, (Dtype)-1., weights_diff);
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->cpu_diff();
@@ -119,9 +151,13 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         top_diff, this->blobs_[0]->cpu_data(), (Dtype)0.,
         bottom[0]->mutable_cpu_diff());
   }
-  const Dtype* top_diff = top[0]->cpu_diff();
-  caffe_copy(bottom[1]->count(), top_diff, bottom[1]->mutable_cpu_diff());
-  caffe_scal(bottom[1]->count(), (Dtype)-1., bottom[1]->mutable_cpu_diff());
+  if (propagate_down[1]) {
+      // Gradient with respesct to bottom activity
+      const Dtype* top_diff = top[0]->cpu_diff();
+      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, N_, (Dtype)-1.,
+          top_diff, competition_matrix_.cpu_data(), (Dtype)0., bottom[1]->mutable_cpu_diff());
+  }
+  
 }
 
 #ifdef CPU_ONLY
