@@ -29,12 +29,12 @@ class InnerProductLayerTest : public MultiDeviceTest<TypeParam> {
     FillerParameter filler_param_0;
     UniformFiller<Dtype> filler_0(filler_param_0);
     filler_param_0.set_min(0);
-    filler_param_0.set_max(1);
+    filler_param_0.set_max(0);
     filler_0.Fill(this->blob_bottom_0_);
     FillerParameter filler_param_1;
     UniformFiller<Dtype> filler_1(filler_param_1);
     filler_param_1.set_min(0);
-    filler_param_1.set_max(1);
+    filler_param_1.set_max(0.1);
     filler_1.Fill(this->blob_bottom_1_);
     blob_bottom_vec_.push_back(blob_bottom_0_);
     blob_bottom_vec_.push_back(blob_bottom_1_);
@@ -108,11 +108,13 @@ TYPED_TEST(InnerProductLayerTest, TestGradient) {
         layer_param.mutable_inner_product_param();
     inner_product_param->set_num_output(10);
     inner_product_param->mutable_weight_filler()->set_type("gaussian");
+    inner_product_param->mutable_weight_filler()->set_min(0);
+    inner_product_param->mutable_weight_filler()->set_max(0.1);
     inner_product_param->mutable_bias_filler()->set_type("gaussian");
     inner_product_param->mutable_bias_filler()->set_min(0);
-    inner_product_param->mutable_bias_filler()->set_max(1);
+    inner_product_param->mutable_bias_filler()->set_max(0.1);
     InnerProductLayer<Dtype> layer(layer_param);
-    GradientChecker<Dtype> checker(1e-2, 3e-3);
+    GradientChecker<Dtype> checker(1e-2, 1e-3);
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);
   } else {
