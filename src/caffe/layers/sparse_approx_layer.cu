@@ -89,9 +89,12 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     caffe_gpu_set(backprop_multiplier_.count(), (Dtype)0.,
       backprop_multiplier_.mutable_gpu_data());
 
-    for (int i = 0; i < N_; ++i) {
-      backprop_multiplier_.mutable_gpu_data()[i*N_ + i] = 1;
+    CUDA_KERNEL_LOOP(index, N_) {
+        backprop_multiplier_.mutable_gpu_data()[index*N_ + index] = 1;
     }
+    //for (int i = 0; i < N_; ++i) {
+    //  backprop_multiplier_.mutable_gpu_data()[i*N_ + i] = 1;
+    //}
 
     // Compute I - eta_ G, put in backprop_multiplier
     caffe_gpu_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.gpu_data(),
