@@ -31,44 +31,43 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
  protected:
   //create blob -> batch=3; channels=3 (RGB); pixels = 4 (2x2)
   SparseApproxLayerTest()
-      : blob_bottom_(new Blob<Dtype>(3, 3, 2, 2)),
+      : blob_bottom_(new Blob<Dtype>(4, 3, 2, 2)),
         blob_top_(new Blob<Dtype>()) {
+    
     // fill the values
     FillerParameter filler_param;
     filler_param.set_min(0.5);
     filler_param.set_max(1);
     UniformFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
+
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
   }
 
-  virtual ~SparseApproxLayerTest() { 
-    delete blob_bottom_;
-    delete blob_top_;
-  }
+  virtual ~SparseApproxLayerTest() { delete blob_bottom_; delete blob_top_; }
 
   Dtype compute_energy(shared_ptr<SparseApproxLayer<Dtype> > layer, LayerParameter layer_param){
     // E = 1/2 sum_p( (x[p] - sum_m(phi[m,p] * a[m]) - b[p])^2 ) + lambda * sum_m(a[m])
     const Blob<Dtype>* input    = this->blob_bottom_vec_[0];
     const Blob<Dtype>* activity = this->blob_top_vec_[0];
-    const shared_ptr<Blob<Dtype> >  weights  = layer->blobs()[0];
-    const shared_ptr<Blob<Dtype> >  bias     = layer->blobs()[1];
-    int batch_size   = this->blob_bottom_vec_[0]->shape(0); // B
+    const shared_ptr<Blob<Dtype> >  weights = layer->blobs()[0];
+    const shared_ptr<Blob<Dtype> >  bias    = layer->blobs()[1];
+    int batch_size   = this->blob_bottom_vec_[0]->shape(0); // M_
     int num_channels = this->blob_bottom_vec_[0]->shape(1);
     int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
     int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
     int num_elements = layer_param.mutable_sparse_approx_param()->num_elements(); // M
     Dtype lambda     = layer_param.mutable_sparse_approx_param()->lambda();
     Dtype E = 0;
-    for (int b=0; b < batch_size; b++) {                    // batch
+    for (int b=0; b < batch_size; ++b) {                    // batch
         Dtype residual_err = 0;
         Dtype a_sum = 0;
-        for (int c=0; c < num_channels; c++) {              // channel
-            for (int h=0; h < num_pixelsH; h++) {           // height
-                for (int w=0; w < num_pixelsW; w++) {       // width
+        for (int c=0; c < num_channels; ++c) {              // channel
+            for (int h=0; h < num_pixelsH; ++h) {           // height
+                for (int w=0; w < num_pixelsW; ++w) {       // width
                     Dtype inner_term = 0;
-                    for (int m=0; m < num_elements; m++) {  // elements
+                    for (int m=0; m < num_elements; ++m) {  // elements
                         if (c==0 && h==0 && w==0) {
                             a_sum += std::abs(activity->cpu_data()[activity->offset(b, m)]);
                         }
@@ -110,8 +109,8 @@ TYPED_TEST(SparseApproxLayerTest, TestSetUp) {
 
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
-  EXPECT_EQ(this->blob_top_->shape(0), 3);  // B_ -> Batch
-  EXPECT_EQ(this->blob_top_->shape(1), 10); // C_ -> Channels 
+  EXPECT_EQ(this->blob_top_->shape(0), 4);  // M_ -> Batch
+  EXPECT_EQ(this->blob_top_->shape(1), 10); // N_ -> Elements
 }
 
 TYPED_TEST(SparseApproxLayerTest, TestForward) {
@@ -132,7 +131,7 @@ TYPED_TEST(SparseApproxLayerTest, TestForward) {
     sparse_approx_param->set_num_elements(10);
     sparse_approx_param->set_lambda(0.1);
     sparse_approx_param->set_eta(0.001);
-    sparse_approx_param->set_gamma(-FLT_MAX);
+    //sparse_approx_param->set_gamma(-FLT_MAX);
     sparse_approx_param->set_bias_term(true);
 
     // Set weights
@@ -193,16 +192,26 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
     SparseApproxParameter* sparse_approx_param =
         layer_param.mutable_sparse_approx_param();
 
-    sparse_approx_param->set_num_elements(10);
-    sparse_approx_param->mutable_weight_filler()->set_type("gaussian");
-    sparse_approx_param->mutable_bias_filler()->set_type("gaussian");
-    sparse_approx_param->mutable_bias_filler()->set_min(1);
-    sparse_approx_param->mutable_bias_filler()->set_max(2);
+    sparse_approx_param->set_num_iterations(4);
+    sparse_approx_param->set_num_elements(2);
+    sparse_approx_param->set_eta(2);
+    sparse_approx_param->set_lambda(0.1);
+
+    sparse_approx_param->mutable_weight_filler()->set_type("uniform");
+    sparse_approx_param->mutable_weight_filler()->set_min(0);
+    sparse_approx_param->mutable_weight_filler()->set_max(1);
+
+    sparse_approx_param->mutable_bias_filler()->set_type("uniform");
+    sparse_approx_param->mutable_bias_filler()->set_min(0);
+    sparse_approx_param->mutable_bias_filler()->set_max(1);
+
     sparse_approx_param->set_bias_term(true);
 
     SparseApproxLayer<Dtype> layer(layer_param);
 
-    GradientChecker<Dtype> checker(1e-2, 1e-2);
+    Dtype stepsize  = 1e-2;
+    Dtype threshold = 1e-3;
+    GradientChecker<Dtype> checker(stepsize, threshold);
 
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);

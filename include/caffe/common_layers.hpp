@@ -332,18 +332,20 @@ class SparseApproxLayer: public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  int M_; // Num neurons (also num basis vectors)
-  int L_; // Num pixels in input (also length of basis vectors)
-  int B_; // Batch size
+  int N_; // Num neurons (also num basis vectors)
+  int K_; // Num pixels in input (also length of basis vectors)
+  int M_; // Batch size
   int num_iterations_; 
   Dtype lambda_, eta_, gamma_;
   bool bias_term_;
 
-  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_, temp_tdiff;
-  Blob<Dtype> biased_input_;        // BxL
-  Blob<Dtype> competition_matrix_;  // <phi^T , phi> has dim MxM
-  Blob<Dtype> activity_history_;    // num_iterations x B*M
-  Blob<Dtype> batch_multiplier_;    // for summing along one dim of matrix
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_, temp_tdiff_;
+  Blob<Dtype> biased_input_;        // M_xK_
+  Blob<Dtype> excitatory_input_;    // <input, phi^T> has dim M_xN_
+  Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_
+  Blob<Dtype> activity_history_;    // num_iterations x M_ x N_
+  Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
+  Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
 };
 
 /**
