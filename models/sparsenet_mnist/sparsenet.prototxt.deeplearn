@@ -8,7 +8,7 @@ layer {
   }
   transform_param {
     scale: 0.0039215684
-    mean_file: "data/mnist/mnist_mean.binaryproto"
+    mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
     source: "/raid/dylan/mnist/mnist_test_lmdb"
@@ -26,6 +26,7 @@ layer {
   }
   transform_param {
     scale: 0.0039215684
+    mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
     source: "/raid/dylan/mnist/mnist_train_lmdb"

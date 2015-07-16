@@ -2,15 +2,15 @@ net: "models/sparsenet_mnist/sparsenet.prototxt"
 test_iter: 100
 test_interval: 100
 test_compute_loss: true
-base_lr: 0.2
+base_lr: 0.1
 lr_policy: "step"
 gamma: 0.1
 stepsize: 5000000
-display: 200
+display: 500
 max_iter: 5000000
 weight_decay: 0.0001
 snapshot: 1000
-snapshot_prefix: "models/sparsenet_mnist/sparsenet_v.0.5"
+snapshot_prefix: "models/sparsenet_mnist/sparsenet_v.0.0"
 momentum: 0.8
 # solver mode: CPU or GPU
 solver_mode: GPU 
