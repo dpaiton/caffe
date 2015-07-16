@@ -90,6 +90,14 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     caffe_set(M_, (Dtype)1., batch_multiplier_.mutable_cpu_data());
   }
 
+  // Create identity matrix
+  identity_matrix_.Reshape(competition_matrix_shape);
+  caffe_set(identity_matrix_.count(), (Dtype)0.,
+    identity_matrix_.mutable_cpu_data());
+  for (int i = 0; i < N_; ++i) {
+    identity_matrix_.mutable_cpu_data()[i*N_ + i] = 1;
+  }
+
   excitatory_input_.Reshape(top[0]->shape());
 
   vector<int> temp_shape(2);
@@ -193,15 +201,9 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // Clear bottom diff
     caffe_set(bottom[0]->count(), (Dtype)0., bottom_diff);
 
-    // Set backprop multiplier to identity matrix
-    caffe_set(backprop_multiplier_.count(), (Dtype)0.,
-      backprop_multiplier_.mutable_cpu_data());
-
-    for (int i = 0; i < N_; ++i) {
-      backprop_multiplier_.mutable_cpu_data()[i*N_ + i] = 1;
-    }
-
     // Compute I - eta_ G, put in backprop_multiplier
+    caffe_copy(backprop_multiplier_.count(), identity_matrix_.cpu_data(),
+      backprop_multiplier_.mutable_cpu_data());
     caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
       backprop_multiplier_.mutable_cpu_data());
     

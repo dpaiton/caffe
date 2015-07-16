@@ -345,6 +345,7 @@ class SparseApproxLayer: public Layer<Dtype> {
   Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_
   Blob<Dtype> activity_history_;    // num_iterations x M_ x N_
   Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
+  Blob<Dtype> identity_matrix_;     // N_ x N_
   Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
 };
 
