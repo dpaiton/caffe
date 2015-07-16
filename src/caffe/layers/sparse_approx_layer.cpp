@@ -228,14 +228,10 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                 caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
                   temp_tdiff_.cpu_diff(), temp_1_.cpu_data(), (Dtype)1., weights_diff);
 
-                caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, eta_,
-                  temp_tdiff_.cpu_diff(), biased_input_.cpu_data(), (Dtype)1.,
-                  weights_diff);
-            } else {
-                caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, eta_,
-                  temp_tdiff_.cpu_diff(), biased_input_.cpu_data(), (Dtype)1.,
-                  weights_diff);
             }
+            caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, eta_,
+              temp_tdiff_.cpu_diff(), biased_input_.cpu_data(), (Dtype)1.,
+              weights_diff);
         }
 
         // Bias gradient
