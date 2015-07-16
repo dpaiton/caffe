@@ -110,7 +110,7 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+  const vector<Blob<Dtype>*>& top) {
 
   const Dtype* input    = bottom[0]->cpu_data();       // input
   const Dtype* top_data = top[0]->cpu_data();          // output
@@ -185,10 +185,10 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
-    const Dtype* weights      = this->blobs_[0]->cpu_data();
+    const Dtype* weights = this->blobs_[0]->cpu_data();
     Dtype* bottom_diff   = bottom[0]->mutable_cpu_diff();
-    Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
-    Dtype* bias_diff    = this->blobs_[1]->mutable_cpu_diff();
+    Dtype* weights_diff  = this->blobs_[0]->mutable_cpu_diff();
+    Dtype* bias_diff     = this->blobs_[1]->mutable_cpu_diff();
 
     // Clear bottom diff
     caffe_set(bottom[0]->count(), (Dtype)0., bottom_diff);
