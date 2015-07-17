@@ -127,7 +127,7 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               sum_top_diff_.mutable_gpu_data());
 
             // multiply by phi
-            caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, N_, K_, -eta_,
+            caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, 1, N_, K_, -eta_,
               sum_top_diff_.gpu_data(), weights, (Dtype)1., bias_diff);
         }
     
