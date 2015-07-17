@@ -339,7 +339,7 @@ class SparseApproxLayer: public Layer<Dtype> {
   Dtype lambda_, eta_, gamma_;
   bool bias_term_;
 
-  Blob<Dtype> temp_1_, temp_2_, temp_3_, sum_top_diff_, temp_tdiff_;
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_, temp_tdiff_;
   Blob<Dtype> biased_input_;        // M_xK_
   Blob<Dtype> excitatory_input_;    // <input, phi^T> has dim M_xN_
   Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_

@@ -107,9 +107,6 @@ void SparseApproxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   temp_shape[0] = K_;
   temp_shape[1] = K_;
   temp_2_.Reshape(temp_shape);
-  temp_shape[0] = N_;
-  temp_shape[1] = M_;
-  temp_3_.Reshape(temp_shape);
 
   backprop_multiplier_.Reshape(competition_matrix_shape);
 
@@ -224,11 +221,11 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                 caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
                   const_a_past, weights, (Dtype)0., temp_1_.mutable_cpu_data());
 
-                caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
-                  temp_1_.cpu_data(), temp_tdiff_.cpu_diff(), (Dtype)1., weights_diff);
-
                 caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
                   const_a_past, temp_tdiff_.cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
+
+                caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
+                  temp_1_.cpu_data(), temp_tdiff_.cpu_diff(), (Dtype)1., weights_diff);
 
                 caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
                   weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
