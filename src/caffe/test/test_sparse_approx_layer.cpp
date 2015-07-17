@@ -36,7 +36,7 @@ class SparseApproxLayerTest : public MultiDeviceTest<TypeParam> {
     
     // fill the values
     FillerParameter filler_param;
-    filler_param.set_min(0.5);
+    filler_param.set_min(0);
     filler_param.set_max(1);
     UniformFiller<Dtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
@@ -194,7 +194,7 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
 
     sparse_approx_param->set_num_iterations(10);
     sparse_approx_param->set_num_elements(2);
-    sparse_approx_param->set_eta(2);
+    sparse_approx_param->set_eta(0.2);
     sparse_approx_param->set_lambda(0.1);
 
     sparse_approx_param->mutable_weight_filler()->set_type("uniform");
