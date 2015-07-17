@@ -2,6 +2,8 @@ net: "models/sparsenet_mnist/sparsenet.prototxt"
 test_iter: 100
 test_interval: 100
 test_compute_loss: true
+# We want to learn slowly (0.01) until bias is
+# done and then speed up to 0.1
 base_lr: 0.1
 lr_policy: "step"
 gamma: 0.1
