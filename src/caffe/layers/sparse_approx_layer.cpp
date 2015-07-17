@@ -227,16 +227,10 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                 caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
                   temp_1_.cpu_data(), temp_tdiff_.cpu_diff(), (Dtype)1., weights_diff);
 
-                //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, M_, K_, (Dtype)1.,
-                //    weights, const_a_past, (Dtype)0., temp_3_.mutable_cpu_data());
-
-                //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, N_, K_, M_, -eta_,
-                //    temp_3_.cpu_data(), temp_tdiff_.cpu_diff(), (Dtype)1., weights_diff); 
-
                 caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
                   const_a_past, temp_tdiff_.cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
 
-                caffe_cpu_gemm<Dtype>(CblasTrans, CblasTrans, N_, K_, K_, -eta_,
+                caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
                   weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
 
             }
