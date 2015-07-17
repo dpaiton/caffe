@@ -216,6 +216,14 @@ TYPED_TEST(SparseApproxLayerTest, TestGradient) {
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);
 
+    sparse_approx_param->set_eta(2);
+
+    SparseApproxLayer<Dtype> layer2(layer_param);
+    GradientChecker<Dtype> checker2(stepsize, threshold);
+
+    checker2.CheckGradientExhaustive(&layer2, this->blob_bottom_vec_,
+        this->blob_top_vec_);
+
   } else {
     LOG(ERROR) << "Skipping test due to old architecture.";
   }
