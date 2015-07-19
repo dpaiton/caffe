@@ -22,7 +22,7 @@ layer {
   name: "data"
   type: "Data"
   top: "data"
-  top: "loss"
+  top: "label"
   include {
     phase: TEST
   }
