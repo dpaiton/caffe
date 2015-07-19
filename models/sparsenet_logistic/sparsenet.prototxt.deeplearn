@@ -12,7 +12,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_test_lmdb"
+    source: "/raid/dylan/mnist/mnist_train_lmdb"
     batch_size: 100
     backend: LMDB
   }
@@ -31,7 +31,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb"
+    source: "/raid/dylan/mnist/mnist_test_lmdb"
     batch_size: 100
     backend: LMDB
   }
