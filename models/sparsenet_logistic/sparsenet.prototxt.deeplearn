@@ -184,7 +184,4 @@ layer {
     bottom: "id2"
     bottom: "label"
     top: "loss"
-    loss_param {
-        normalize: 1
-    }
 }
