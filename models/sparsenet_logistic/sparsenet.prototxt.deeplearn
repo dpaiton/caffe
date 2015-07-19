@@ -1,4 +1,5 @@
 name: "SparseNet"
+
 layer {
   name: "data"
   type: "Data"
@@ -119,12 +120,10 @@ layer {
   bottom: "encode"
   top: "id1"
   param {
-    name: "phi"
     lr_mult: 1
     decay_mult: 1
   }
   param {
-    name: "bias"
     lr_mult: 1
     decay_mult: 0
   }
