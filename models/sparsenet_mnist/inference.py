@@ -20,10 +20,10 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
 root_dir   = '/osx/caffe/'
-model_ver  = 'v.1.0'
-mov_start  = 5000
-mov_step   = 5000
-mov_end    = 100000
+model_ver  = 'v.0.0'
+mov_start  = 1000
+mov_step   = 1000
+mov_end    = 11000
 model_file = root_dir+'/models/sparsenet_mnist/sparsenet_'+model_ver+'_iter_'+str(mov_end)+'.caffemodel'
 model_prototxt = 'models/sparsenet_mnist/sparsenet.prototxt'
 
