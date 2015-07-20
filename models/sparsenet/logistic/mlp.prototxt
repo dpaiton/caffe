@@ -112,6 +112,6 @@ layer {
     top: "loss"
     loss_param {
         ignore_label: -1
-        normalize: 1 # normalize by count
+        normalize: true # normalize by count
     }
 }
