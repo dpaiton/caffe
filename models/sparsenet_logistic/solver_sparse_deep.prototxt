@@ -12,7 +12,7 @@ display: 500
 max_iter: 5000000
 weight_decay: 0.0001
 snapshot: 1000
-snapshot_prefix: "/osx/caffe/models/sparsenet_logistic/sparsenet_v.0.0"
+snapshot_prefix: "models/sparsenet_logistic/sparsenet_v.0.0"
 momentum: 0.8
 # solver mode: CPU or GPU
 solver_mode: GPU 
