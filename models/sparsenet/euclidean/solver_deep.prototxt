@@ -1,4 +1,4 @@
-net: "models/sparsenet_mnist/sparsenet.prototxt"
+net: "models/sparsenet/euclidean/sparsenet.prototxt"
 test_iter: 100
 test_interval: 100
 test_compute_loss: true
@@ -12,7 +12,7 @@ display: 500
 max_iter: 5000000
 weight_decay: 0.0001
 snapshot: 1000
-snapshot_prefix: "models/sparsenet_mnist/sparsenet_v.0.0"
+snapshot_prefix: "models/sparsenet/euclidean/sparsenet_v.0.0"
 momentum: 0.8
 # solver mode: CPU or GPU
 solver_mode: GPU 

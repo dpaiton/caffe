@@ -2,8 +2,8 @@
 
 TOOLS=./build/tools
 
-GLOG_logtostderr=0 GLOG_log_dir=models/sparsenet_logistic/ $TOOLS/caffe train \
-    --solver=models/sparsenet_logistic/solver_$1.prototxt \
+GLOG_logtostderr=0 GLOG_log_dir=models/sparsenet/logistic/ $TOOLS/caffe train \
+    --solver=models/sparsenet/logistic/solver_$1.prototxt \
     $2
     #--gpu=1
-    #--weights=models/sparsenet_logistic/sparsenet.caffemodel \
+    #--weights=models/sparsenet/logistic/sparsenet.caffemodel 
