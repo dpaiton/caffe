@@ -3,6 +3,7 @@ import numpy as np
 import lmdb
 import random
 
+#dataset_dir    = '/raid/dylan/mnist'
 dataset_dir    = 'examples/mnist/'
 orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
 percent_ignore = 10
