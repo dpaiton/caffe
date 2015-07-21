@@ -103,11 +103,11 @@ layer {
 }
 
 layer {
-  name: "loss"
+  name: "euclidean_loss"
   type: "EuclideanLoss"
   bottom: "flatdata"
   bottom: "decode"
-  top: "l2_error"
+  top: "euclidean_loss"
   loss_weight: 1
 }
 
@@ -178,11 +178,11 @@ layer {
 # Should we normalize by max value using a separate layer?
 
 layer {
-    name: "loss"
+    name: "softmax_loss"
     type: "SoftmaxWithLoss"
     bottom: "id2"
     bottom: "label"
-    top: "loss"
+    top: "softmax_loss"
     loss_param {
         ignore_label: -1
         normalize: true # normalize by count

@@ -103,11 +103,11 @@ layer {
 }
 
 layer {
-    name: "loss"
+    name: "softmax_loss"
     type: "SoftmaxWithLoss"
     bottom: "ip2"
     bottom: "label"
-    top: "loss"
+    top: "softmax_loss"
     loss_param {
         ignore_label: -1
         normalize: true # normalize by count
