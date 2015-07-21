@@ -45,16 +45,16 @@ list7 = [idx for idx,val in enumerate(label_list) if val==7]
 list8 = [idx for idx,val in enumerate(label_list) if val==8]
 list9 = [idx for idx,val in enumerate(label_list) if val==9]
 
-ign0 = random.sample(list0,int(np.floor(len(list0)/10)))
-ign1 = random.sample(list1,int(np.floor(len(list1)/10)))
-ign2 = random.sample(list2,int(np.floor(len(list2)/10)))
-ign3 = random.sample(list3,int(np.floor(len(list3)/10)))
-ign4 = random.sample(list4,int(np.floor(len(list4)/10)))
-ign5 = random.sample(list5,int(np.floor(len(list5)/10)))
-ign6 = random.sample(list6,int(np.floor(len(list6)/10)))
-ign7 = random.sample(list7,int(np.floor(len(list7)/10)))
-ign8 = random.sample(list8,int(np.floor(len(list8)/10)))
-ign9 = random.sample(list9,int(np.floor(len(list9)/10)))
+ign0 = random.sample(list0,int(np.floor(len(list0)*(percent_ignore/100))))
+ign1 = random.sample(list1,int(np.floor(len(list1)*(percent_ignore/100))))
+ign2 = random.sample(list2,int(np.floor(len(list2)*(percent_ignore/100))))
+ign3 = random.sample(list3,int(np.floor(len(list3)*(percent_ignore/100))))
+ign4 = random.sample(list4,int(np.floor(len(list4)*(percent_ignore/100))))
+ign5 = random.sample(list5,int(np.floor(len(list5)*(percent_ignore/100))))
+ign6 = random.sample(list6,int(np.floor(len(list6)*(percent_ignore/100))))
+ign7 = random.sample(list7,int(np.floor(len(list7)*(percent_ignore/100))))
+ign8 = random.sample(list8,int(np.floor(len(list8)*(percent_ignore/100))))
+ign9 = random.sample(list9,int(np.floor(len(list9)*(percent_ignore/100))))
 
 ignore_list = np.concatenate((ign0,ign1,ign2,ign3,ign4,ign5,ign6,ign7,ign8,ign9))
 
