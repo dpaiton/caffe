@@ -21,16 +21,16 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
 
 root_dir   = '/Users/dpaiton/Code/caffe/'
 exp_lbl    = 'logistic'  # logistic or euclidean
-model_lbl  = 'mlp'       # sparsenet(_deep) or mlp(_deep)
+model_lbl  = 'sparsenet'       # sparsenet or mlp
 model_ver  = 'v.0.0'
 mov_start  = 1000
 mov_step   = 1000
-mov_end    = 5000
+mov_end    = 11000
 
-weight_layer_name = 'ip1'
-activity_analysis = False 
-pixel_bias        = False
-make_recon        = False
+weight_layer_name = 'decode'
+activity_analysis = True
+pixel_bias        = True
+make_recon        = True
 
 model_file     = root_dir+'/models/sparsenet/'+exp_lbl+'/'+model_lbl+'_'+model_ver+'_iter_'+str(mov_end)+'.caffemodel'
 model_prototxt = 'models/sparsenet/'+exp_lbl+'/'+model_lbl+'.prototxt'
@@ -62,8 +62,8 @@ def make_movies(start,end,step):
     	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
 
     	weights    = np.array(net.params[weight_layer_name][0].data)
-        weight_len = np.int32(np.sqrt(weights.shape[1]))
-        weight_vis = vis_square(weights.T.reshape(weights.shape[0], weight_len, weight_len))
+        weight_len = np.int32(np.sqrt(weights.shape[0]))
+        weight_vis = vis_square(weights.T.reshape(weights.shape[1], weight_len, weight_len))
         weight_img = np.uint8(weight_vis*255)
         Image.fromarray(weight_img).save(out_dir+'/'+weight_layer_name+'_weights_'+model_ver+'_'+str(iter)+'.png')
 	
@@ -74,7 +74,7 @@ def make_movies(start,end,step):
 
     if pixel_bias:
         biases   = np.array(net.params[weight_layer_name][1].data)
-        bias_len = np.int32(np.sqrt(biases.shape[1]))
+        bias_len = np.int32(np.sqrt(biases.shape[0]))
         bias_vis = vis_square(biases.reshape(1, bias_len, bias_len))
         bias_img = np.uint8(bias_vis*255)
         Image.fromarray(bias_img).save(out_dir+'/'+weight_layer_name+'_bias_'+model_ver+'_'+str(iter)+'.png')
@@ -84,7 +84,7 @@ def make_movies(start,end,step):
         activity = np.array(net.blobs['encode'].data)
         activity_img = activity / np.max(np.abs(activity)) * 255./2 + 255./2
         activity_img = np.uint8(activity_img)
-        Image.fromarray(activity_img).save(out_dir+'Analysis/activity_'+model_ver+'_'+str(iter)+'.png')
+        Image.fromarray(activity_img).save(out_dir+'/activity_'+model_ver+'_'+str(iter)+'.png')
 
 	#IPython.embed()
 
@@ -118,7 +118,7 @@ def main(args):
         recon     = np.array(net.blobs[weight_layer_name].data).reshape(input_dat.shape)
         recon_vis = vis_square(recon)
         recon_img = np.uint8(recon_vis*255)
-        Image.fromarray(recon_img).save(out_dif+'/recon_'+model_ver+'.png')
+        Image.fromarray(recon_img).save(out_dir+'/recon_'+model_ver+'.png')
 
     make_movies(mov_start,mov_end+100,mov_step)
 
