@@ -4,9 +4,9 @@ import lmdb
 import random
 
 dataset_dir    = '/raid/dylan/mnist/'
-dataset_dir    = 'examples/mnist/'
+#dataset_dir    = 'examples/mnist/'
 orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
-percent_ignore = 10
+percent_ignore = 90
 new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(percent_ignore)+'/'
 
 orig_env = lmdb.open(orig_dataset, readonly=True)
@@ -59,7 +59,7 @@ ign9 = random.sample(list9,int(np.floor(len(list9)*(percent_ignore/100.))))
 
 ignore_list = np.concatenate((ign0,ign1,ign2,ign3,ign4,ign5,ign6,ign7,ign8,ign9))
 
-num_bytes = np.prod((dataset_size,channels,height,width)) * np.dtype(np.uint8).itemsize * 2
+num_bytes = np.prod((dataset_size,channels,height,width)) * np.dtype(np.uint8).itemsize * 8
 
 mod_env = lmdb.open(new_dataset, map_size=num_bytes)
 

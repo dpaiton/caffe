@@ -1,18 +1,21 @@
 net: "models/sparsenet/logistic/sparsenet_deep.prototxt"
 test_iter: 100
-test_interval: 100
+test_interval: 10000
 test_compute_loss: true
+
 # We want to learn slowly (0.01) until bias is
 # done and then speed up to 0.1
 base_lr: 0.1
 lr_policy: "step"
-gamma: 0.1
-stepsize: 5000000
-display: 500
-max_iter: 5000000
+gamma: 0.9
+stepsize: 100000
+max_iter: 2000000
+
+display: 1000
+
 weight_decay: 0.0001
-snapshot: 1000
-snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.0.0"
+snapshot: 100000
+snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.95.0"
 momentum: 0.8
 # solver mode: CPU or GPU
 solver_mode: GPU 
