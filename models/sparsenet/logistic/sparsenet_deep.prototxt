@@ -13,7 +13,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb"
+    source: "/raid/dylan/mnist/mnist_train_lmdb_95"
     batch_size: 100
     backend: LMDB
   }
@@ -54,7 +54,7 @@ layer {
     decay_mult: 0
   }
   sparse_approx_param {
-    num_elements: 200
+    num_elements: 500
     weight_filler {
       type: "xavier"
       std: 0.01
@@ -63,9 +63,9 @@ layer {
       type: "constant"
       value: 0
     }
-    num_iterations: 100
+    num_iterations: 20
     lambda: 0.01
-    eta: 0.01
+    eta: 0.05
     gamma: 0
   }
 }
@@ -114,41 +114,17 @@ layer {
 }
 
 layer {
-  name: "id1"
-  type: "InnerProduct"
-  bottom: "encode"
-  top: "id1"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
-  param {
-    lr_mult: 1
-    decay_mult: 0
-  }
-  inner_product_param {
-    num_output: 500
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-    }
-  }
-}
-
-layer {
     name: "relu"
     type: "ReLU"
-    bottom: "id1"
-    top: "id1"
+    bottom: "encode"
+    top: "encodeRelu"
 }
 
 layer {
-    name: "id2"
+    name: "id1"
     type: "InnerProduct"
-    bottom: "id1"
-    top: "id2"
+    bottom: "encodeRelu"
+    top: "id1"
     param {
         lr_mult: 1
     }
@@ -169,7 +145,7 @@ layer {
 layer {
     name: "accuracy"
     type: "Accuracy"
-    bottom: "id2"
+    bottom: "id1"
     bottom: "label"
     top: "accuracy"
     include {
@@ -180,7 +156,7 @@ layer {
 layer {
     name: "softmax_loss"
     type: "SoftmaxWithLoss"
-    bottom: "id2"
+    bottom: "id1"
     bottom: "label"
     top: "softmax_loss"
     loss_param {

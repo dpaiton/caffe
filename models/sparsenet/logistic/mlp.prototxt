@@ -13,7 +13,7 @@ layer {
     mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "examples/mnist/mnist_train_lmdb"
+    source: "examples/mnist/mnist_train_lmdb_90"
     batch_size: 100
     backend: LMDB
   }
