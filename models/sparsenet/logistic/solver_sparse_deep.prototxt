@@ -7,15 +7,19 @@ test_compute_loss: true
 # done and then speed up to 0.1
 base_lr: 0.1
 lr_policy: "step"
-gamma: 0.9
-stepsize: 100000
+gamma: 0.5
+# MNIST has 60k images in training
+stepsize: 120000
+
 max_iter: 2000000
+
+momentum: 0.8
+weight_decay: 0.0001
 
 display: 1000
 
-weight_decay: 0.0001
 snapshot: 100000
 snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.95.0"
-momentum: 0.8
+
 # solver mode: CPU or GPU
 solver_mode: GPU 

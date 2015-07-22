@@ -1,4 +1,5 @@
 name: "SparseNet"
+
 layer {
   name: "data"
   type: "Data"
@@ -11,7 +12,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_test_lmdb"
+    source: "/raid/dylan/mnist/mnist_train_lmdb"
     batch_size: 100
     backend: LMDB
   }
@@ -29,17 +30,10 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb"
+    source: "/raid/dylan/mnist/mnist_test_lmdb"
     batch_size: 100
     backend: LMDB
   }
-}
-
-layer {
-  name: "flatdata"
-  type: "Flatten"
-  bottom: "data"
-  top: "flatdata"
 }
 
 layer {
@@ -58,18 +52,17 @@ layer {
     decay_mult: 0
   }
   sparse_approx_param {
-    num_elements: 200
+    num_elements: 500
     weight_filler {
-      type: "gaussian"
-      std: 0.01
+      type: "xavier"
     }
     bias_filler {
       type: "constant"
       value: 0
     }
-    num_iterations: 100
+    num_iterations: 20
     lambda: 0.01
-    eta: 0.01
+    eta: 0.1
     gamma: 0
   }
 }
@@ -92,14 +85,20 @@ layer {
   inner_product_param {
     num_output: 784 
     weight_filler {
-      type: "gaussian"
-      std: 0.01
+      type: "xavier"
     }
     bias_filler {
       type: "constant"
       value: 0
     }
   }
+}
+
+layer {
+  name: "flatdata"
+  type: "Flatten"
+  bottom: "data"
+  top: "flatdata"
 }
 
 layer {
