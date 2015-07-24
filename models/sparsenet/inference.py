@@ -16,10 +16,10 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
 root_dir   = '/Users/dpaiton/Code/caffe/'
 exp_lbl    = 'euclidean'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.95.0'
-mov_start  = 10000
+model_ver  = 'v.6.0'
+mov_start  = 800000
 mov_step   = 10000
-mov_end    = 120000
+mov_end    = 1000000
 
 #weight_layer_name = 'ip1'
 weight_layer_name = 'decode'
@@ -60,6 +60,7 @@ def make_movies(start,end,step):
     	weights    = np.array(net.params[weight_layer_name][0].data)
 
         #TODO: the general form doesn't work because the MLP IP layer is T from Sparsenet Encode Layer
+        #      read input layer information to get pixel dims, other dim will be # weights
         #weight_len = np.int32(np.sqrt(weights.shape[0]))
         #weight_vis = vis_square(weights.T.reshape(weights.shape[1], weight_len, weight_len))
 
