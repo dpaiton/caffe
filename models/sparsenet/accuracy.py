@@ -6,7 +6,7 @@ caffe_root     = '/Users/dpaiton/Code/caffe/'
 model_list     = ['sparsenet']#['sparsenet', 'mlp']
 version_list   = [90]
 iteration_list = range(10000,240001,10000)
-model_num      = 15
+model_num      = 74 
 
 iteration      = iteration_list[-1]
 
@@ -63,7 +63,7 @@ print "\n"
 if len(model_list) > 1:
     print model_list[1]+" lbl err %: "+str(100*lbl_err[1,:])
     print model_list[1]+" itr err %: "+str(100*itr_err[1,:])
-print "Analysis of model number "+str(model_num)+" complete."
+print "Analysis of "+str(model_list)+" and model number "+str(model_num)+" complete."
 
 plt.figure(1)
 plt.plot(iteration_list, 100*itr_err[0,:], 'r', label=model_list[0])
