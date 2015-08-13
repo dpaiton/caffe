@@ -43,8 +43,8 @@ layer {
   top: "encode"
   param {
     name: "phi"
-    lr_mult: 1
-    decay_mult: 1
+    lr_mult: 0
+    decay_mult: 0
   }
   param { 
     name: "bias"
@@ -60,9 +60,9 @@ layer {
       type: "constant"
       value: 0
     }
-    num_iterations: 20
+    num_iterations: 40
     lambda: 0.01
-    eta: 0.1
+    eta: 0.005
     gamma: 0
   }
 }

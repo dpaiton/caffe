@@ -13,7 +13,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb_95"
+    source: "/raid/dylan/mnist/mnist_train_lmdb_90"
     batch_size: 100
     backend: LMDB
   }
@@ -45,7 +45,7 @@ layer {
   top: "encode"
   param {
     name: "phi"
-    lr_mult: 1
+    lr_mult: 0.6
     decay_mult: 1
   }
   param { 
@@ -63,9 +63,9 @@ layer {
       type: "constant"
       value: 0
     }
-    num_iterations: 20
-    lambda: 0.01
-    eta: 0.05
+    num_iterations: 10
+    lambda: 0.02
+    eta: 0.2
     gamma: 0
   }
 }
@@ -76,7 +76,7 @@ layer {
   bottom: "encode"
   top: "decode"
   param {
-    name: "phi"
+    #name: "phi"
     lr_mult: 1
     decay_mult: 1
   }
@@ -110,7 +110,7 @@ layer {
   bottom: "flatdata"
   bottom: "decode"
   top: "euclidean_loss"
-  loss_weight: 1
+  loss_weight: 0.1
 }
 
 layer {
@@ -159,6 +159,7 @@ layer {
     bottom: "id1"
     bottom: "label"
     top: "softmax_loss"
+    loss_weight: 0.9
     loss_param {
         ignore_label: -1
         normalize: false 
