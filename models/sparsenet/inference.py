@@ -16,16 +16,18 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
 root_dir   = '/Users/dpaiton/Code/caffe/'
 exp_lbl    = 'euclidean'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.95.0'
-mov_start  = 10000
+model_ver  = 'v.25.0'
+mov_start  = 1000000
 mov_step   = 10000
-mov_end    = 120000
+mov_end    = 1000000
+
+assert mov_start <= mov_end
 
 #weight_layer_name = 'ip1'
 weight_layer_name = 'decode'
-activity_analysis = True 
-pixel_bias        = True 
-make_recon        = True 
+activity_analysis = True
+pixel_bias        = True
+make_recon        = True
 
 model_pretext  = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
 model_file     = model_pretext+str(mov_end)+'.caffemodel'
@@ -60,12 +62,14 @@ def make_movies(start,end,step):
     	weights    = np.array(net.params[weight_layer_name][0].data)
 
         #TODO: the general form doesn't work because the MLP IP layer is T from Sparsenet Encode Layer
+        #      read input layer information to get pixel dims, other dim will be # weights
         #weight_len = np.int32(np.sqrt(weights.shape[0]))
         #weight_vis = vis_square(weights.T.reshape(weights.shape[1], weight_len, weight_len))
 
         weight_len = 28 
         weight_vis = vis_square(weights.T.reshape(500, weight_len, weight_len)) # for sparsenet
         #weight_vis = vis_square(weights.reshape(500, weight_len, weight_len))    # for MLP
+
         weight_img = np.uint8(weight_vis*255)
         Image.fromarray(weight_img).save(out_dir+'/'+weight_layer_name+'_weights_'+model_ver+'_'+str(iter)+'.png')
 	
