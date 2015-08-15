@@ -4,8 +4,8 @@ import lmdb
 import random
 
 dataset_dir    = 'examples/mnist/'
-percent_ignore = 80
-new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(percent_ignore)+'/'
+num_ignore     = 100
+new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(num_ignore)+'/'
 
 env = lmdb.open(new_dataset, readonly=True)
 
