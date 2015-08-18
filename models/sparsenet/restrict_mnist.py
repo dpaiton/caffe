@@ -3,10 +3,10 @@ import numpy as np
 import lmdb
 import random
 
-#dataset_dir    = '/raid/dylan/mnist/'
-dataset_dir    = 'examples/mnist/'
+dataset_dir    = '/raid/dylan/mnist/'
+#dataset_dir    = 'examples/mnist/'
 orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
-num_keep     = 100 
+num_keep       = 100 
 new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(num_keep)+'/'
 
 orig_env = lmdb.open(orig_dataset, readonly=True)
