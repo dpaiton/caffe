@@ -13,7 +13,7 @@ layer {
     mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb_90"
+    source: "/raid/dylan/mnist/mnist_train_lmdb_100"
     batch_size: 100
     backend: LMDB
   }
@@ -45,27 +45,27 @@ layer {
   top: "encode"
   param {
     name: "phi"
-    lr_mult: 0.6
+    lr_mult: 1
     decay_mult: 1
   }
   param { 
     name: "bias"
-    lr_mult: 1
+    lr_mult: 0
     decay_mult: 0
   }
   sparse_approx_param {
-    num_elements: 500
+    num_elements: 400
     weight_filler {
-      type: "xavier"
+      type: "gaussian"
       std: 0.01
     }
     bias_filler {
       type: "constant"
       value: 0
     }
-    num_iterations: 10
-    lambda: 0.02
-    eta: 0.2
+    num_iterations: 20
+    lambda: 0.01
+    eta: 0.1
     gamma: 0
   }
 }
@@ -81,14 +81,16 @@ layer {
     decay_mult: 1
   }
   param {
-    name: "bias"
-    lr_mult: 1
+    #name: "bias"
+    lr_mult: 2
     decay_mult: 0
   }
   inner_product_param {
     num_output: 784
     weight_filler {
-      type: "xavier"
+      #type: "xavier"
+      type: "gaussian"
+      std: 0.01
     }
     bias_filler {
       type: "constant"
@@ -127,17 +129,22 @@ layer {
     top: "id1"
     param {
         lr_mult: 1
+        decay_mult: 0
     }
     param {
         lr_mult: 1
+        decay_mult: 0
     }
     inner_product_param {
         num_output: 10
         weight_filler {
-            type: "xavier"
+            #type: "xavier"
+            type: "gaussian"
+            std: 0.01
         }
         bias_filler {
             type: "constant"
+            value: 0
         }
     }
 }
