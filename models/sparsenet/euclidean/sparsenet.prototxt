@@ -52,7 +52,7 @@ layer {
     decay_mult: 0
   }
   sparse_approx_param {
-    num_elements: 500
+    num_elements: 400
     weight_filler {
       type: "xavier"
     }
@@ -73,12 +73,12 @@ layer {
   bottom: "encode"
   top: "decode"
   param {
-    name: "phi"
+    #name: "phi"
     lr_mult: 1
     decay_mult: 1
   }
   param {
-    name: "bias"
+    #name: "bias"
     lr_mult: 1
     decay_mult: 0
   }
