@@ -41,7 +41,7 @@ with orig_env.begin() as txn:
 dataset_size = len(label_list)
 num_keep = int(num_keep/num_labels) # num_keep per label 
 
-print 'Found '+str(dataset_size)+' images. Keeping '+str(num_keep)+' per label.'
+print 'Found '+str(dataset_size)+' images. Keeping '+str(num_keep)+' labels per type.'
 
 idx_list = []
 ignore_list = []
