@@ -4,30 +4,29 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import os
 import IPython
+from argparse import ArgumentParser
 
 np.random.seed(0)
 
-
-from argparse import ArgumentParser
 parser = ArgumentParser('sgd training driver')
 parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
 root_dir   = '/Users/dpaiton/Code/caffe/'
-exp_lbl    = 'logistic'  # logistic or euclidean
+exp_lbl    = 'euclidean'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.90.59'
-mov_start  = 10000 
+model_ver  = 'v.34.0'
+mov_start  = 2000000
 mov_step   = 10000
-mov_end    = 240000
+mov_end    = 2000000
 
 assert mov_start <= mov_end
 
 #weight_layer_name = 'ip1'
-weight_layer_name = 'decode'
-activity_analysis = True
-pixel_bias        = True
-make_recon        = True
+weight_layer_name = 'encode'
+activity_analysis = False 
+pixel_bias        = False 
+make_recon        = False 
 
 model_pretext  = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
 model_file     = model_pretext+str(mov_end)+'.caffemodel'
@@ -51,13 +50,14 @@ def vis_square(data, padsize=1, padval=0):
     # tile the filters into an image
     data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-    
     return data
 
 def make_movies(start,end,step):
     for iter in range(start,end,step):
     	model_file = model_pretext+str(iter)+'.caffemodel'
-    	net        = caffe.Net(model_prototxt, model_file, caffe.TEST)
+
+        #IPython.embed()
+    	net        = caffe.Net(root_dir+model_prototxt, model_file, caffe.TEST)
 
     	weights    = np.array(net.params[weight_layer_name][0].data)
 
@@ -66,6 +66,7 @@ def make_movies(start,end,step):
         #weight_len = np.int32(np.sqrt(weights.shape[0]))
         #weight_vis = vis_square(weights.T.reshape(weights.shape[1], weight_len, weight_len))
 
+        #TODO: Don't hard code this
         weight_len = 28 
         weight_vis = vis_square(weights.T.reshape(500, weight_len, weight_len)) # for sparsenet
         #weight_vis = vis_square(weights.reshape(500, weight_len, weight_len))    # for MLP
@@ -92,8 +93,6 @@ def make_movies(start,end,step):
         activity_img = np.uint8(activity_img)
         Image.fromarray(activity_img).save(out_dir+'/activity_'+model_ver+'_'+str(iter)+'.png')
 
-	#IPython.embed()
-
 def main(args):
     if args.device_id == -1:
         print 'running on cpu'
@@ -103,7 +102,9 @@ def main(args):
         caffe.set_device(device_id)
         caffe.set_mode_gpu()
 
-    net = caffe.Net(model_prototxt, model_file, caffe.TEST)
+    make_movies(mov_start,mov_end+100,mov_step)
+
+    net = caffe.Net(root_dir+model_prototxt, model_file, caffe.TEST)
 
     batch_size  = net.blobs['data'].data.shape[0]
     batch_shape = net.blobs['data'].data.shape[1:]
@@ -111,7 +112,7 @@ def main(args):
     # each output is (batch size, feature dim, spatial dim)
     print [(k, v.data.shape) for k, v in net.blobs.items()]
 
-    # just print the weight sizes (not biases)
+    # print the weight sizes
     print [(k, v[0].data.shape) for k, v in net.params.items()]
 
     net.forward()
@@ -126,7 +127,6 @@ def main(args):
         recon_img = np.uint8(recon_vis*255)
         Image.fromarray(recon_img).save(out_dir+'/recon_'+model_ver+'.png')
 
-    make_movies(mov_start,mov_end+100,mov_step)
 
     if activity_analysis:
         activity = []
