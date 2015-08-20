@@ -5,9 +5,11 @@ import random
 
 dataset_dir    = '/raid/dylan/mnist/'
 #dataset_dir    = 'examples/mnist/'
-orig_dataset   = dataset_dir+'/mnist_train_50K_lmdb/'
+orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
 num_keep       = 100 
-new_dataset    = dataset_dir+'/mnist_train_50K_lmdb_'+str(num_keep)+'/'
+new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(num_keep)+'/'
+
+print 'Modifying '+orig_dataset
 
 orig_env = lmdb.open(orig_dataset, readonly=True)
 
@@ -36,6 +38,8 @@ with orig_env.begin() as txn:
 dataset_size = len(label_list)
 num_keep = num_keep/10 # num_keep per number
 
+print 'Found '+str(dataset_size)+' images. Keeping '+str(num_keep)+' per number'
+
 idx_list = []
 ignore_list = []
 for num in range(0,10):
@@ -61,4 +65,4 @@ with mod_env.begin(write=True) as mod_txn:
             mod_txn.put(key, datum.SerializeToString())
             iteration += 1
 
-print 'Set '+str(num_ignored)+' out of '+str(dataset_size)+' labels to ignore.'
+print 'Set '+str(num_ignored)+' out of '+str(iteration)+' labels to ignore.'

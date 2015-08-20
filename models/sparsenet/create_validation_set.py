@@ -3,15 +3,15 @@ import numpy as np
 import lmdb
 import random
 
-#dataset_dir      = '/raid/dylan/mnist/'
-dataset_dir      = 'examples/mnist/'
+dataset_dir      = '/raid/dylan/mnist/'
+#dataset_dir      = 'examples/mnist/'
 num_val          = 10000
 num_tra          = 50000
 orig_tra_dataset = dataset_dir+'/mnist_train_lmdb/'
 tra_dataset      = dataset_dir+'/mnist_train_'+str(num_tra/1000)+'K_lmdb/'
 val_dataset      = dataset_dir+'/mnist_val_'+str(num_val/1000)+'K_lmdb/'
 
-print 'Creating validation set with '+str(num_val)+' images.'
+print 'Creating validation set with '+str(num_val)+' random images.'
 
 orig_env = lmdb.open(orig_tra_dataset, readonly=True)
 
@@ -58,4 +58,5 @@ with tra_env.begin(write=True) as tra_txn:
 
 assert val_inc == num_val
 assert tra_inc == num_tra
+
 print 'From '+str(iteration)+' images, used '+str(tra_inc)+' for training and '+str(val_inc)+' for validation.'
