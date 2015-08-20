@@ -5,11 +5,14 @@ import random
 
 dataset_dir    = '/raid/dylan/mnist/'
 #dataset_dir    = 'examples/mnist/'
-orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
+orig_dataset   = dataset_dir+'/mnist_train_50K_lmdb/'
 num_keep       = 100 
-new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(num_keep)+'/'
+new_dataset    = dataset_dir+'/mnist_train_50K_lmdb_'+str(num_keep)+'/'
+num_labels     = 10
 
-print 'Modifying '+orig_dataset
+assert num_keep%num_labels == 0
+
+print 'Setting all but '+str(num_keep)+' images to label=ignore from dataset '+orig_dataset
 
 orig_env = lmdb.open(orig_dataset, readonly=True)
 
@@ -36,9 +39,9 @@ with orig_env.begin() as txn:
         label_list.append(datum.label)
 
 dataset_size = len(label_list)
-num_keep = num_keep/10 # num_keep per number
+num_keep = int(num_keep/num_labels) # num_keep per label 
 
-print 'Found '+str(dataset_size)+' images. Keeping '+str(num_keep)+' per number'
+print 'Found '+str(dataset_size)+' images. Keeping '+str(num_keep)+' per label.'
 
 idx_list = []
 ignore_list = []

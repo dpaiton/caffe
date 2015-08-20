@@ -37,6 +37,7 @@ val_env = lmdb.open(val_dataset, map_size=num_val_bytes)
 
 # randomly select images to place into the validation set
 val_idx = random.sample([idx for idx in range(0,num_val+num_tra)], num_val)
+assert len(val_idx) == num_val
 
 val_inc = 0
 tra_inc = 0
@@ -56,7 +57,7 @@ with tra_env.begin(write=True) as tra_txn:
                     tra_inc += 1
                 iteration += 1
 
-assert val_inc == num_val
-assert tra_inc == num_tra
+assert num_val == val_inc
+assert num_tra == tra_inc
 
 print 'From '+str(iteration)+' images, used '+str(tra_inc)+' for training and '+str(val_inc)+' for validation.'
