@@ -5,9 +5,9 @@ import random
 
 dataset_dir    = '/raid/dylan/mnist/'
 #dataset_dir    = 'examples/mnist/'
-orig_dataset   = dataset_dir+'/mnist_train_lmdb/'
+orig_dataset   = dataset_dir+'/mnist_train_50K_lmdb/'
 num_keep       = 100 
-new_dataset    = dataset_dir+'/mnist_train_lmdb_'+str(num_keep)+'/'
+new_dataset    = dataset_dir+'/mnist_train_50K_lmdb_'+str(num_keep)+'/'
 
 orig_env = lmdb.open(orig_dataset, readonly=True)
 
