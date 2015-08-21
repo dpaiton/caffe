@@ -15,7 +15,7 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
 root_dir   = '/Users/dpaiton/Code/caffe/'
 exp_lbl    = 'euclidean'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.34.0'
+model_ver  = 'v.33.0'
 mov_start  = 2000000
 mov_step   = 10000
 mov_end    = 2000000
@@ -28,8 +28,8 @@ activity_analysis = False
 pixel_bias        = False 
 make_recon        = False 
 
-model_pretext  = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
-model_file     = model_pretext+str(mov_end)+'.caffemodel'
+model_pretxt  = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
+model_file     = model_pretxt+str(mov_end)+'.caffemodel'
 model_prototxt = 'models/sparsenet/'+exp_lbl+'/'+model_lbl+'.prototxt'
 out_dir        = root_dir+'/models/sparsenet/'+exp_lbl+'/Analysis/'
 
@@ -54,7 +54,7 @@ def vis_square(data, padsize=1, padval=0):
 
 def make_movies(start,end,step):
     for iter in range(start,end,step):
-    	model_file = model_pretext+str(iter)+'.caffemodel'
+    	model_file = model_pretxt+str(iter)+'.caffemodel'
 
         #IPython.embed()
     	net        = caffe.Net(root_dir+model_prototxt, model_file, caffe.TEST)
