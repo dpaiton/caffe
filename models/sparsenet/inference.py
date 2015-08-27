@@ -102,7 +102,7 @@ def main(args):
         caffe.set_device(device_id)
         caffe.set_mode_gpu()
 
-    make_movies(mov_start,mov_end+100,mov_step)
+    make_movies(mov_start,mov_end+1,mov_step)
 
     net = caffe.Net(root_dir+model_prototxt, model_file, caffe.TEST)
 
