@@ -180,6 +180,7 @@ void SparseApproxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
      // Add previous activities to eta_ [...]
      caffe_cpu_axpby(top[0]->count(), (Dtype)1., const_a_past, eta_, mutable_a_current);
+    
   }
 
   // Store latest activity history into top for output
@@ -192,6 +193,9 @@ template <typename Dtype>
 void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
+
+    // GradientStats
+    stats_string_ = "Iter\telem_mean\t\tgrad_mean\t\tgrad_std\n";
 
     const Dtype* weights = this->blobs_[0]->cpu_data();
     Dtype* bottom_diff   = bottom[0]->mutable_cpu_diff();
@@ -210,7 +214,16 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // First iteration holds top_diff
     caffe_copy(top[0]->count(), top[0]->cpu_diff(), temp_tdiff_.mutable_cpu_diff());
 
+    // GradientStats
+    Dtype data_mean = 0;
+    Dtype grad_mean = 0;
+    Dtype grad_std  = 0;
+    Dtype temp      = 0;
     for (int iteration = num_iterations_-1; iteration >= 0; --iteration) {
+
+        // GradientStats
+        stats_string_ += std::to_string(iteration) + "\t";
+
         // Weight gradient
         if (this->param_propagate_down_[0]) {
             if (iteration != 0) {
@@ -234,6 +247,30 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, eta_,
               biased_input_.cpu_data(), temp_tdiff_.cpu_diff(), (Dtype)1.,
               weights_diff);
+            
+            // GradientStats
+            for (int el = 0; el < N_; ++el) {
+                data_mean += (weights[el] > Dtype(0.)) ? weights[el] : -weights[el];
+                grad_mean += (weights_diff[el] > Dtype(0.)) ? weights_diff[el] : -weights_diff[el];
+            }
+            data_mean /= this->blobs_[0]->count();
+            grad_mean /= this->blobs_[0]->count();
+            Dtype grad_var = 0;
+            for (int i = 0; i < this->blobs_[0]->count(); ++i) {
+                temp = (weights_diff[i] > Dtype(0.)) ? weights_diff[i] : -weights_diff[i];
+                grad_var += (temp - grad_mean) * (temp - grad_mean);
+            }
+            grad_std = sqrt(grad_var);
+            stringstream ss;
+            ss << std::scientific << data_mean;
+            stats_string_ += ss.str() + "\t\t";
+            ss.str(std::string());
+            ss << std::scientific << grad_mean;
+            stats_string_ += ss.str() + "\t\t";
+            ss.str(std::string());
+            ss << std::scientific << grad_std;
+            stats_string_ += ss.str() + "\t\t";
+            ss.str(std::string());
         }
 
         // Bias gradient
@@ -260,6 +297,8 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           temp_tdiff_.mutable_cpu_diff());
         
         caffe_copy(temp_tdiff_.count(), temp_tdiff_.cpu_diff(), top[0]->mutable_cpu_diff());
+        
+        stats_string_ += "\n";
     }
 }
 

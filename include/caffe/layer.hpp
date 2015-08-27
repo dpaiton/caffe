@@ -316,6 +316,8 @@ class Layer {
     param_propagate_down_[param_id] = value;
   }
 
+  // for GradientStats
+  virtual inline string GetLayerStats() { return "NONE"; }
 
  protected:
   /** The protobuf that stores the layer parameters */

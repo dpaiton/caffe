@@ -291,8 +291,7 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
- * @brief Performs sparse approximation following dynamics described in
- *        Rozell et al. 2008
+ * @brief Performs ISTA l1 sparse approximation
  *
  * TODO(dox): thorough documentation for Forward, Backward, and proto params.
  **/
@@ -322,6 +321,9 @@ class SparseApproxLayer: public Layer<Dtype> {
       Reshape(bottom,top);
   }
 
+  // for GradientStats
+  virtual inline string GetLayerStats() { return stats_string_; }
+
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
@@ -347,6 +349,9 @@ class SparseApproxLayer: public Layer<Dtype> {
   Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
   Blob<Dtype> identity_matrix_;     // N_ x N_
   Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
+
+  // for GradientStats
+  string stats_string_;
 };
 
 /**
