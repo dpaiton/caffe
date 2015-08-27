@@ -195,7 +195,7 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<Blob<Dtype>*>& bottom) {
 
     // GradientStats
-    stats_string_ = "Iter\telem_mean\t\tgrad_mean\t\tgrad_std\n";
+    stats_string_ = "Iter\telem_mean\t\tgrad_mean\t\tgrad_var\n";
 
     const Dtype* weights = this->blobs_[0]->cpu_data();
     Dtype* bottom_diff   = bottom[0]->mutable_cpu_diff();
@@ -260,7 +260,8 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                 temp = (weights_diff[i] > Dtype(0.)) ? weights_diff[i] : -weights_diff[i];
                 grad_var += (temp - grad_mean) * (temp - grad_mean);
             }
-            grad_std = sqrt(grad_var);
+            grad_var /= this->blobs_[0]->count();
+            //grad_std = sqrt(grad_var);
             stringstream ss;
             ss << std::scientific << data_mean;
             stats_string_ += ss.str() + "\t\t";
@@ -268,7 +269,7 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             ss << std::scientific << grad_mean;
             stats_string_ += ss.str() + "\t\t";
             ss.str(std::string());
-            ss << std::scientific << grad_std;
+            ss << std::scientific << grad_var;
             stats_string_ += ss.str() + "\t\t";
             ss.str(std::string());
         }
