@@ -1,24 +1,21 @@
 net: "models/sparsenet/logistic/mlp_deep.prototxt"
 test_iter: 100
-test_interval: 10000
-test_compute_loss: true
+test_interval: 1000
+#test_compute_loss: true
 
-# We want to learn slowly (0.01) until bias is
-# done and then speed up to 0.1
-base_lr: 0.01
+max_iter: 480000
+base_lr: 0.04
+
 lr_policy: "step"
-gamma: 0.5
-# MNIST has 60k training images
 stepsize: 120000
-max_iter: 480000 
 
+gamma: 0.5
 momentum: 0.8
-weight_decay: 0.0001
+weight_decay: 0.00001
 
 display: 1000
-
-snapshot: 10000
-snapshot_prefix: "models/sparsenet/logistic/mlp_v.90.7"
+snapshot: 1000
+snapshot_prefix: "models/sparsenet/logistic/mlp_v.100.10.1"
 
 # solver mode: CPU or GPU
 solver_mode: GPU
