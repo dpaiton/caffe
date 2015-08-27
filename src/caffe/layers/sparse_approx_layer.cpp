@@ -195,7 +195,8 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<Blob<Dtype>*>& bottom) {
 
     // GradientStats
-    stats_string_ = "Iter\telem_mean\t\tgrad_mean\t\tgrad_var\n";
+    stringstream ss;
+    ss << "Iter\telem_mean\t\tgrad_mean\t\tgrad_var\n";
 
     const Dtype* weights = this->blobs_[0]->cpu_data();
     Dtype* bottom_diff   = bottom[0]->mutable_cpu_diff();
@@ -217,12 +218,12 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // GradientStats
     Dtype data_mean = 0;
     Dtype grad_mean = 0;
-    Dtype grad_std  = 0;
+    //Dtype grad_std  = 0;
     Dtype temp      = 0;
     for (int iteration = num_iterations_-1; iteration >= 0; --iteration) {
 
         // GradientStats
-        stats_string_ += std::to_string(iteration) + "\t";
+        ss << iteration << "\t";
 
         // Weight gradient
         if (this->param_propagate_down_[0]) {
@@ -262,16 +263,9 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             }
             grad_var /= this->blobs_[0]->count();
             //grad_std = sqrt(grad_var);
-            stringstream ss;
-            ss << std::scientific << data_mean;
-            stats_string_ += ss.str() + "\t\t";
-            ss.str(std::string());
-            ss << std::scientific << grad_mean;
-            stats_string_ += ss.str() + "\t\t";
-            ss.str(std::string());
-            ss << std::scientific << grad_var;
-            stats_string_ += ss.str() + "\t\t";
-            ss.str(std::string());
+            ss << std::scientific << data_mean << "\t\t";
+            ss << std::scientific << grad_mean << "\t\t";
+            ss << std::scientific << grad_var << "\t\t";
         }
 
         // Bias gradient
@@ -299,7 +293,8 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         
         caffe_copy(temp_tdiff_.count(), temp_tdiff_.cpu_diff(), top[0]->mutable_cpu_diff());
         
-        stats_string_ += "\n";
+	ss << "\n";
+        stats_string_ = ss.str();
     }
 }
 
