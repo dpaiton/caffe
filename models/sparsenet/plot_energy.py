@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import caffe
 import numpy as np
 import os
@@ -12,19 +14,21 @@ parser = ArgumentParser('sgd training driver')
 parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
                     default=-1)
 
-root_dir   = '/Users/dpaiton/Code/caffe/'
+#root_dir   = '/Users/dpaiton/Code/caffe/'
+root_dir   = '/nfs/dylan/caffe/'
 exp_lbl    = 'logistic'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.100.8'
+model_ver  = 'v.100.9'
 mov_start  = 1000
 mov_step   = 1000
-mov_end    = 754000
+mov_end    = 70000
 
-model_pretxt    = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
-model_prototxt  = root_dir+'/models/sparsenet/'+exp_lbl+'/'+model_lbl+'.prototxt'
+#model_pretxt    = root_dir+'/models/sparsenet/'+exp_lbl+'/checkpoints/'+model_lbl+'_'+model_ver+'_iter_'
+model_pretxt    = root_dir+'/models/sparsenet/'+exp_lbl+'/'+model_lbl+'_'+model_ver+'_iter_'
+model_prototxt  = root_dir+'/models/sparsenet/'+exp_lbl+'/'+model_lbl+'_deep.prototxt'
 
 if exp_lbl is 'logistic':
-    solver_prototxt = root_dir+'/models/sparsenet/'+exp_lbl+'/solver_sparse.prototxt'
+    solver_prototxt = root_dir+'/models/sparsenet/'+exp_lbl+'/solver_sparse_deep.prototxt'
 elif exp_lbl is 'euclidean':
     solver_prototxt = root_dir+'/models/sparsenet/'+exp_lbl+'/solver.prototxt'
 else:
@@ -40,8 +44,8 @@ def main(args):
         print 'running on cpu'
         caffe.set_mode_cpu()
     else:
-        print 'running on gpu %d' % device_id
-        caffe.set_device(device_id)
+        print 'running on gpu %d' % args.device_id
+        caffe.set_device(args.device_id)
         caffe.set_mode_gpu()
 
     # time steps
@@ -66,12 +70,18 @@ def main(args):
         solver.net.copy_from(model_file)
         solver.step(1)
 
-        scores_train = solver.net.forward()
-        energy_vals[index] += 0.9*scores_train['softmax_loss'] + 0.1*scores_train['euclidean_loss']
+	
+        for j in range(10):
+	    scores_train = solver.net.forward()
+            energy_vals[index] += 0.9*scores_train['softmax_loss'] + 0.1*scores_train['euclidean_loss']
+
+        energy_vals[index] /= float(10)
 
         for i in range(100):
-            scores_test  = solver.test_nets[0].forward()
+            scores_test = solver.test_nets[0].forward()
             accuracy_vals[index] += scores_test['accuracy']
+
+	accuracy_vals[index] /= 100
 
         index += 1
 
@@ -86,7 +96,7 @@ def main(args):
         plt.title('Energy analysis for '+num_labels+' training labels')
     else:
         plt.title('Energy analysis')
-    legend = fig.legend(loc='best', shadow=False, fontsize='small')
+    #legend = fig.legend(loc='best', shadow=False, fontsize='small')
     plt.savefig(out_dir+'/energy_'+model_ver+'.png',dpi=1000,bbox_inches='tight')
 
     #IPython.embed()
