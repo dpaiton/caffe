@@ -1,15 +1,16 @@
 net: "models/sparsenet/logistic/sparsenet.prototxt"
+#test_net: "models/sparsenet/logistic/mlp.prototxt" # single data layer
 test_iter: 100
 test_interval: 1000
 test_compute_loss: true
 
 max_iter: 70000
-base_lr: 0.02
+base_lr: 0.05
 
 #lr_policy: "inv"
 #power: 0.75
 lr_policy: "step"
-stepsize: 20000
+stepsize: 10000
 
 gamma: 0.1
 momentum: 0.8
@@ -17,7 +18,7 @@ weight_decay: 0.001
 
 display: 100
 snapshot: 1000
-snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.100.9"
+snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.100.10"
 
 # GradientStats
 display_stats: true 
