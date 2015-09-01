@@ -30,7 +30,6 @@ with orig_env.begin() as txn:
     width = datum.width
 
 label_list = []
-
 # loop through dataset once to get labels
 with orig_env.begin() as txn:
     lmdb_cursor = txn.cursor()
