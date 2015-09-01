@@ -1,4 +1,5 @@
 name: "SparseNet"
+
 layer {
   name: "data"
   type: "Data"
@@ -12,7 +13,7 @@ layer {
     mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "examples/mnist/mnist_train_lmdb_90"
+    source: "examples/mnist/mnist_train_50K_lmdb_100"
     batch_size: 100
     backend: LMDB
   }
@@ -31,7 +32,7 @@ layer {
     mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "examples/mnist/mnist_test_lmdb"
+    source: "examples/mnist/mnist_val_10K_lmdb"
     batch_size: 100
     backend: LMDB
   }
@@ -55,15 +56,16 @@ layer {
   sparse_approx_param {
     num_elements: 500
     weight_filler {
-      type: "xavier"
+      type: "gaussian"
+      std: 0.01
     }
     bias_filler {
       type: "constant"
       value: 0
     }
-    num_iterations: 11
+    num_iterations: 10
     lambda: 0.01
-    eta: 0.1
+    eta: 0.2
     gamma: 0
   }
 }
@@ -79,14 +81,15 @@ layer {
     decay_mult: 1
   }
   param {
-    name: "bias"
+    #name: "bias"
     lr_mult: 1
     decay_mult: 0
   }
   inner_product_param {
     num_output: 784
     weight_filler {
-      type: "xavier"
+      type: "gaussian"
+      std: 0.01
     }
     bias_filler {
       type: "constant"
@@ -108,7 +111,7 @@ layer {
   bottom: "flatdata"
   bottom: "decode"
   top: "euclidean_loss"
-  loss_weight: 1
+  loss_weight: 0.1
 }
 
 layer {
@@ -125,17 +128,21 @@ layer {
     top: "id1"
     param {
         lr_mult: 1
+        decay_mult: 0
     }
     param {
-        lr_mult: 1 # was 2
+        lr_mult: 1
+        decay_mult: 0
     }
     inner_product_param {
         num_output: 10
         weight_filler {
-            type: "xavier"
+            type: "gaussian"
+            std: 0.01
         }
         bias_filler {
             type: "constant"
+            value: 0
         }
     }
 }
@@ -151,16 +158,15 @@ layer {
     }
 }
 
-# Should we normalize by max value using a separate layer?
-
 layer {
     name: "softmax_loss"
     type: "SoftmaxWithLoss"
     bottom: "id1"
     bottom: "label"
     top: "softmax_loss"
+    loss_weight: 0.9
     loss_param {
         ignore_label: -1
-        normalize: true # normalize by count
+        normalize: false 
     }
 }

@@ -1,6 +1,6 @@
 net: "models/sparsenet/logistic/sparsenet.prototxt"
 test_iter: 100
-test_interval: 100
+test_interval: 1000
 test_compute_loss: true
 
 max_iter: 3000

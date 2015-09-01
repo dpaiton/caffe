@@ -1,4 +1,5 @@
 net: "models/sparsenet/logistic/mlp.prototxt"
+#test_net: "models/sparsenet/logistic/mlp.prototxt" # single data layer
 test_iter: 100
 test_interval: 1000
 #test_compute_loss: true
