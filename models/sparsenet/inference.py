@@ -15,10 +15,10 @@ parser.add_argument('-d', '--device_id', type=int, help='''gpu device number''',
 root_dir   = '/Users/dpaiton/Code/caffe/'
 exp_lbl    = 'euclidean'  # logistic or euclidean
 model_lbl  = 'sparsenet' # sparsenet or mlp
-model_ver  = 'v.33.0'
-mov_start  = 2000000
+model_ver  = 'v.35.0'
+mov_start  = 1700000
 mov_step   = 10000
-mov_end    = 2000000
+mov_end    = 1700000
 
 assert mov_start <= mov_end
 

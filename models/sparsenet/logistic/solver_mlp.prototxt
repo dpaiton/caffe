@@ -4,19 +4,19 @@ test_iter: 100
 test_interval: 1000
 #test_compute_loss: true
 
-max_iter: 240000
-base_lr: 0.04 
+max_iter: 480000
+base_lr: 0.04
 
 lr_policy: "step"
 stepsize: 120000
 
 gamma: 0.5
 momentum: 0.8
-weight_decay: 0.0001
+weight_decay: 0.00001
 
 display: 1000
 snapshot: 100000
-snapshot_prefix: "models/sparsenet/logistic/mlp_v.100.0"
+snapshot_prefix: "models/sparsenet/logistic/mlp_v.100.10.1"
 
 # solver mode: CPU or GPU
-solver_mode: CPU
+solver_mode: GPU

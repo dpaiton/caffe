@@ -9,7 +9,7 @@ layer {
     phase: TRAIN
   }
   transform_param {
-    scale: 0.0039215684
+    scale: 0.0039215684 #map data from [0, 255] to [0, 1]
     mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
@@ -28,8 +28,8 @@ layer {
     phase: TEST
   }
   transform_param {
-    scale: 0.0039215684
-    mean_file: "data/mnist/mnist_mean.binaryproto"
+    scale: 0.0039215684 #map data from [0, 255] to [0, 1]
+    mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
   }
   data_param {
     source: "examples/mnist/mnist_val_10K_lmdb"

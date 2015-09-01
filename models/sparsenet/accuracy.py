@@ -6,7 +6,7 @@ caffe_root     = '/Users/dpaiton/Code/caffe/'
 model_list     = ['sparsenet']#['sparsenet', 'mlp']
 version_list   = [90]
 iteration_list = range(10000,240001,10000)
-model_num      = 74 
+model_num      = 74
 
 iteration      = iteration_list[-1]
 
