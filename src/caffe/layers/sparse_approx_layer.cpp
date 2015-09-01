@@ -293,7 +293,7 @@ void SparseApproxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         
         caffe_copy(temp_tdiff_.count(), temp_tdiff_.cpu_diff(), top[0]->mutable_cpu_diff());
         
-	ss << "\n";
+        ss << "\n";
         stats_string_ = ss.str();
     }
 }
