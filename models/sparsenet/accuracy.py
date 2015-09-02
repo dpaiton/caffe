@@ -8,6 +8,10 @@ version_list   = [90]
 iteration_list = range(10000,240001,10000)
 model_num      = 74
 
+out_dir = root_dir+'/models/sparsenet/logistic/accuracy_analysis/'
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
 iteration      = iteration_list[-1]
 
 caffe.set_mode_cpu()
@@ -65,7 +69,7 @@ if len(model_list) > 1:
     print model_list[1]+" itr err %: "+str(100*itr_err[1,:])
 print "Analysis of "+str(model_list)+" and model number "+str(model_num)+" complete."
 
-plt.figure(1)
+fig1 = plt.figure(1)
 plt.plot(iteration_list, 100*itr_err[0,:], 'r', label=model_list[0])
 if len(model_list) > 1:
     plt.plot(iteration_list, 100*itr_err[1,:], 'b', label=model_list[1])
@@ -73,9 +77,10 @@ plt.xlabel('Iteration #')
 plt.ylabel('% Error Rate')
 plt.title('Error Rate with '+str(100-version)+' % Labels')
 plt.legend(loc='upper left')#bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+fig1.savefig(out_dir+'/acc_vs_iter.png',dpi=1000,bbox_inches='tight')
 
 if len(version_list) > 1:
-    plt.figure(2)
+    fig2 = plt.figure(2)
     plt.plot(version_list, 100*lbl_err[0,:], 'r', label=model_list[0])
     if len(model_list) > 1:
         plt.plot(version_list, 100*lbl_err[1,:], 'b', label=model_list[1])
@@ -83,5 +88,4 @@ if len(version_list) > 1:
     plt.ylabel('% Error Rate')
     plt.title('Error Rate with Diminishing Labels')
     plt.legend(loc='upper left')#bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-
-plt.show()
+    fig2.savefig(out_dir+'/acc_vs_ver.png',dpi=1000,bbox_inches='tight')
