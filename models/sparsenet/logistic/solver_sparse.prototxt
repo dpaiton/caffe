@@ -4,13 +4,11 @@ test_iter: 100
 test_interval: 1000
 test_compute_loss: true
 
-max_iter: 70000
+max_iter: 1000
 base_lr: 0.05
 
-#lr_policy: "inv"
-#power: 0.75
 lr_policy: "step"
-stepsize: 10000
+stepsize: 500
 
 gamma: 0.1
 momentum: 0.8
@@ -18,10 +16,11 @@ weight_decay: 0.001
 
 display: 100
 snapshot: 1000
-snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.100.10"
+snapshot_prefix: "models/sparsenet/logistic/sparsenet_v.test5"
 
 # GradientStats
 display_stats: true 
+stats_iter: 100
 
 # solver mode: CPU or GPU
-solver_mode: GPU
+solver_mode: CPU
