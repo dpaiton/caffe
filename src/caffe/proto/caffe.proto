@@ -237,7 +237,7 @@ message SolverParameter {
 
   // If true, display weight and gradient statistics for sparseapproximation layer (GradientStats)
   optional bool display_stats = 40 [default = false];
-  optional int32 stats_iter = 41 [default = 0];
+  optional int32 stats_iter = 41 [default = 1];
 }
 
 // A message that stores the solver snapshots
