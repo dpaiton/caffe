@@ -1,7 +1,5 @@
 ## General
 
-Makefile
-
 # CAFFE log files
 caffe.*.log.*
 
