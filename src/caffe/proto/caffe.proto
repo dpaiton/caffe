@@ -301,7 +301,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 139 (last added: tile_param)
+// LayerParameter next available layer-specific ID: 140 (last added: sparse_unit_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -379,6 +379,7 @@ message LayerParameter {
   optional ReshapeParameter reshape_param = 133;
   optional SigmoidParameter sigmoid_param = 124;
   optional SoftmaxParameter softmax_param = 125;
+  optional SparseUnitParameter sparse_unit_param = 139;
   optional SPPParameter spp_param = 132;
   optional SliceParameter slice_param = 126;
   optional TanHParameter tanh_param = 127;
@@ -965,6 +966,16 @@ message WindowDataParameter {
   optional bool cache_images = 12 [default = false];
   // append root_folder to locate images
   optional string root_folder = 13 [default = ""];
+}
+
+message SparseUnitParameter{ 
+  //TODO: Set default fillers?
+  optional FillerParameter weight_filler = 1;
+  optional bool bias_term = 2 [default = true];
+  optional FillerParameter bias_filler = 3;
+
+  optional float lambda = 6 [default = 0.0];
+  optional float eta = 7 [default = 0.0];
 }
 
 message SPPParameter {

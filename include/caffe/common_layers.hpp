@@ -329,6 +329,50 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Implementation of a single iteration of ISTA l1 sparse approximation
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ */
+template <typename Dtype>
+class SparseUnitLayer: public Layer<Dtype> {
+ public:
+  explicit SparseUnitLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector <Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  
+  virtual inline const char* type() const { return "SparseUnit"; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  
+  int M_; // Batch size
+  int K_; // num pixels in bottom[0] (also length of features)
+  int N_; // num features
+  bool bias_term_;
+  Dtype lambda_, eta_;
+
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_, temp_tdiff_;
+  Blob<Dtype> biased_input_;        // M_xK_
+  Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_
+  Blob<Dtype> past_activity_;       // M_xN_
+  Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
+  Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
+  Blob<Dtype> identity_matrix_;     // N_xN_
+};
+
+/**
  * @brief Also known as a "fully-connected" layer, computes an inner product
  *        with a set of learned weights, and (optionally) adds biases.
  *
