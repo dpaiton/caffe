@@ -1,4 +1,5 @@
 name: "SparseNet"
+
 layer {
   name: "data"
   type: "Data"
@@ -8,11 +9,11 @@ layer {
   }
   transform_param {
     scale: 0.0039215684
-    mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
+    mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_test_lmdb"
-    batch_size: 100
+    source: "examples/mnist/mnist_train_lmdb"
+    batch_size: 50 # 2 GPUs makes batch_size 100
     backend: LMDB
   }
 }
@@ -26,20 +27,13 @@ layer {
   }
   transform_param {
     scale: 0.0039215684
-    mean_file: "/raid/dylan/mnist/mnist_mean.binaryproto"
+    mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "/raid/dylan/mnist/mnist_train_lmdb"
-    batch_size: 100
+    source: "examples/mnist/mnist_test_lmdb"
+    batch_size: 50 # 2 GPUs makes batch_size 100
     backend: LMDB
   }
-}
-
-layer {
-  name: "flatdata"
-  type: "Flatten"
-  bottom: "data"
-  top: "flatdata"
 }
 
 layer {
@@ -54,11 +48,11 @@ layer {
   }
   param { 
     name: "bias"
-    lr_mult: 1
+    lr_mult: 0.5
     decay_mult: 0
   }
   sparse_approx_param {
-    num_elements: 200
+    num_elements: 500
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -67,7 +61,7 @@ layer {
       type: "constant"
       value: 0
     }
-    num_iterations: 100
+    num_iterations: 20
     lambda: 0.01
     eta: 0.01
     gamma: 0
@@ -80,13 +74,13 @@ layer {
   bottom: "encode"
   top: "decode"
   param {
-    name: "phi"
+    #name: "phi"
     lr_mult: 1
     decay_mult: 1
   }
   param {
     name: "bias"
-    lr_mult: 1
+    lr_mult: 0.5
     decay_mult: 0
   }
   inner_product_param {
@@ -100,6 +94,13 @@ layer {
       value: 0
     }
   }
+}
+
+layer {
+  name: "flatdata"
+  type: "Flatten"
+  bottom: "data"
+  top: "flatdata"
 }
 
 layer {

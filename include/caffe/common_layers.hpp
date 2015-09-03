@@ -181,6 +181,44 @@ class EltwiseLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief A layer for learning "embeddings" of one-hot vector input.
+ *        Equivalent to an InnerProductLayer with one-hot vectors as input, but
+ *        for efficiency the input is the "hot" index of each column itself.
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ */
+template <typename Dtype>
+class EmbedLayer : public Layer<Dtype> {
+ public:
+  explicit EmbedLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "Embed"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int M_;
+  int K_;
+  int N_;
+  bool bias_term_;
+  Blob<Dtype> bias_multiplier_;
+};
+
+/**
  * @brief Takes two+ Blobs, interprets last Blob as a selector and
  *  filter remaining Blobs accordingly with selector data (0 means that
  * the corresponding item has to be filtered, non-zero means that corresponding
@@ -291,8 +329,7 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
- * @brief Performs sparse approximation following dynamics described in
- *        Rozell et al. 2008
+ * @brief Performs ISTA l1 sparse approximation
  *
  * TODO(dox): thorough documentation for Forward, Backward, and proto params.
  **/
@@ -322,6 +359,9 @@ class SparseApproxLayer: public Layer<Dtype> {
       Reshape(bottom,top);
   }
 
+  // for GradientStats
+  virtual inline string GetLayerStats() { return stats_string_; }
+
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
@@ -347,6 +387,9 @@ class SparseApproxLayer: public Layer<Dtype> {
   Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
   Blob<Dtype> identity_matrix_;     // N_ x N_
   Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
+
+  // for GradientStats
+  string stats_string_;
 };
 
 /**
@@ -663,6 +706,35 @@ class SliceLayer : public Layer<Dtype> {
   int slice_size_;
   int slice_axis_;
   vector<int> slice_point_;
+};
+
+/**
+ * @brief Copy a Blob along specified dimensions.
+ */
+template <typename Dtype>
+class TileLayer : public Layer<Dtype> {
+ public:
+  explicit TileLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "Tile"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  unsigned int axis_, tiles_, outer_dim_, inner_dim_;
 };
 
 }  // namespace caffe
