@@ -27,7 +27,7 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     caffe_gpu_sub(bottom[0]->count(), input, temp_1_.gpu_data(),
         biased_input_.mutable_gpu_data());
   } else {
-    caffe_set(bottom[0]->count(), (Dtype)0., biased_input_.mutable_gpu_data());
+    caffe_copy(bottom[0]->count(), input, biased_input_.mutable_gpu_data());
   }
 
   caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, N_, (Dtype)1.,
@@ -46,8 +46,6 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
   // a[t-1] + eta_ (ext - a[t-1] G - lambda_ sgn(a[t-1]))
   caffe_gpu_axpby(top[0]->count(), (Dtype)1., a_past, eta_, mutable_top_data);
-  
-  caffe_copy(top[0]->count(), top[0]->gpu_data(), top[0]->mutable_gpu_data());
 }
 
 template <typename Dtype>
