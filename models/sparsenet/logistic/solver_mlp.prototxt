@@ -1,22 +1,22 @@
 net: "models/sparsenet/logistic/mlp.prototxt"
 #test_net: "models/sparsenet/logistic/mlp.prototxt" # single data layer
 test_iter: 100
-test_interval: 1000
+test_interval: 500
 #test_compute_loss: true
 
-max_iter: 240000
-base_lr: 0.04
+max_iter: 10000
+base_lr: 0
 
 lr_policy: "step"
 stepsize: 120000
 
 gamma: 0.5
 momentum: 0.8
-weight_decay: 0.00001
+weight_decay: 0
 
-display: 100
-snapshot: 120000
-snapshot_prefix: "models/sparsenet/logistic/mlp_v.100.11"
+display: 10
+snapshot: 10000
+snapshot_prefix: "models/sparsenet/logistic/mlp_v.test"
 
 # solver mode: CPU or GPU
-solver_mode: GPU
+solver_mode: CPU

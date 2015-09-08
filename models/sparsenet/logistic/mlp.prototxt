@@ -13,8 +13,8 @@ layer {
     mean_file: "data/mnist/mnist_mean.binaryproto"
   }
   data_param {
-    source: "examples/mnist/mnist_train_100_lmdb"
-    batch_size: 50 # 2 GPUs makes batch_size = 100
+    source: "examples/mnist/mnist_train_50K_lmdb"
+    batch_size: 100 # 2 GPUs makes batch_size = 100
     backend: LMDB
   }
 }
@@ -33,7 +33,7 @@ layer {
   }
   data_param {
     source: "examples/mnist/mnist_val_10K_lmdb"
-    batch_size: 50 # 2 GPUs makes batch_size = 100 
+    batch_size: 100 # 2 GPUs makes batch_size = 100 
     backend: LMDB
   }
 }
@@ -93,8 +93,8 @@ layer {
         std: 0.01
         }
         bias_filler {
-            type: "constant"
-	    value: 0
+          type: "constant"
+          value: 0
         }
     }
 }

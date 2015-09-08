@@ -14,7 +14,7 @@ root_dir   = '/Users/dpaiton/Code/caffe/'
 #root_dir   = '/nfs/dylan/caffe/'
 exp_lbl    = 'logistic'  # logistic or euclidean
 model_lbl  = 'mlp' # sparsenet or mlp
-model_ver  = 'v.100.test4'
+model_ver  = 'v.test'
 
 def main():
 
