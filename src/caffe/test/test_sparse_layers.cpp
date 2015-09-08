@@ -31,8 +31,8 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
  protected:
   //create blob -> batch=3; channels=3 (RGB); pixels = 4 (2x2)
   SparseLayerTest()
-      : blob_bottom_0_(new Blob<Dtype>(4, 3, 2, 2)),
-        blob_bottom_1_(new Blob<Dtype>(4, 10, 1, 1)),
+      : blob_bottom_0_(new Blob<Dtype>(1, 1, 2, 2)),
+        blob_bottom_1_(new Blob<Dtype>(1, 2, 1, 1)),
         blob_top_(new Blob<Dtype>()) {
     
     // fill the values
@@ -66,7 +66,6 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
     int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
     int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
     int num_elements = this->blob_bottom_vec_[1]->count(1); // M
-    std::cout<<"\nnum_elements: "<<num_elements<<"\n";
     Dtype E = 0;
     for (int b=0; b < batch_size; ++b) {                    // batch
       Dtype residual_err = 0;
@@ -91,8 +90,6 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
         }
       }
       E += 0.5 * residual_err + lambda_ * a_sum;
-      std::cout<<"a_sum: "<<a_sum<<"\n";
-      std::cout<<"residual_error: "<<residual_err<<"\n";
     }
     return E;
   }
@@ -106,78 +103,98 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
 
 TYPED_TEST_CASE(SparseLayerTest, TestDtypesAndDevices);
 
-TYPED_TEST(SparseLayerTest, TestUnitSetUp) {
+//TYPED_TEST(SparseLayerTest, TestUnitSetUp) {
+//
+//  typedef typename TypeParam::Dtype Dtype;
+//  LayerParameter layer_param;
+//
+//  shared_ptr<SparseUnitLayer<Dtype> > layer(
+//      new SparseUnitLayer<Dtype>(layer_param));
+//
+//  layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+//
+//  EXPECT_EQ(this->blob_top_->shape(0), 4);  // M_ -> Batch
+//  EXPECT_EQ(this->blob_top_->shape(1), 10); // N_ -> Elements
+//}
 
+TYPED_TEST(SparseLayerTest, TestUnitForward) {
   typedef typename TypeParam::Dtype Dtype;
-  LayerParameter layer_param;
+  bool IS_VALID_CUDA = false;
+  #ifndef CPU_ONLY
+  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
+  #endif
+  
+  if (Caffe::mode() == Caffe::CPU ||
+      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
+    LayerParameter layer_param;
+    SparseUnitParameter* sparse_unit_param =
+        layer_param.mutable_sparse_unit_param();
 
-  shared_ptr<SparseUnitLayer<Dtype> > layer(
-      new SparseUnitLayer<Dtype>(layer_param));
+    sparse_unit_param->set_lambda(0);
+    sparse_unit_param->set_eta(0.01);
+    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
+    sparse_unit_param->mutable_weight_filler()->set_min(0);
+    sparse_unit_param->mutable_weight_filler()->set_max(0.1);
+    sparse_unit_param->set_bias_term(false);
+    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
+    sparse_unit_param->mutable_bias_filler()->set_min(0);
+    sparse_unit_param->mutable_bias_filler()->set_max(0.5);
 
-  layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    shared_ptr<SparseUnitLayer<Dtype> > layer(
+        new SparseUnitLayer<Dtype>(layer_param));
 
-  EXPECT_EQ(this->blob_top_->shape(0), 4);  // M_ -> Batch
-  EXPECT_EQ(this->blob_top_->shape(1), 10); // N_ -> Elements
+    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    Dtype E1 = this->compute_energy(layer,layer_param);
+
+    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+    Dtype prev_eng = this->compute_energy(layer,layer_param);
+
+    CHECK_LE(prev_eng,E1);
+
+    for (int t = 0; t < 5; ++t) {
+      caffe_copy(this->blob_bottom_vec_[1]->count(), this->blob_top_vec_[0]->cpu_data(), this->blob_bottom_vec_[1]->mutable_cpu_data());
+      layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+      Dtype eng = this->compute_energy(layer,layer_param);
+      CHECK_LE(eng,prev_eng);
+      prev_eng = eng;
+    }
+  }
 }
 
-//TYPED_TEST(SparseLayerTest, TestUnitForward) {
+//TYPED_TEST(SparseLayerTest, TestUnitGradient) {
 //  typedef typename TypeParam::Dtype Dtype;
+//
 //  bool IS_VALID_CUDA = false;
 //  #ifndef CPU_ONLY
 //  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
 //  #endif
-//  
+//
 //  if (Caffe::mode() == Caffe::CPU ||
 //      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
+//
 //    LayerParameter layer_param;
-//    SparseUnitParameter* sparse_unit_param =
+//    SparseUnitParameter * sparse_unit_param = 
 //        layer_param.mutable_sparse_unit_param();
 //
 //    sparse_unit_param->set_lambda(0.1);
 //    sparse_unit_param->set_eta(0.01);
 //    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
 //    sparse_unit_param->mutable_weight_filler()->set_min(0);
-//    sparse_unit_param->mutable_weight_filler()->set_max(0.1);
+//    sparse_unit_param->mutable_weight_filler()->set_max(0);
 //    sparse_unit_param->set_bias_term(false);
 //    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
 //    sparse_unit_param->mutable_bias_filler()->set_min(0);
 //    sparse_unit_param->mutable_bias_filler()->set_max(0.5);
 //
-//    shared_ptr<SparseUnitLayer<Dtype> > layer(
-//        new SparseUnitLayer<Dtype>(layer_param));
+//    SparseUnitLayer<Dtype> layer(layer_param);
 //
-//    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+//    Dtype stepsize  = 1e-2;
+//    Dtype threshold = 1e-3;
+//    GradientChecker<Dtype> checker(stepsize, threshold);
 //
-//    Dtype E1 = this->compute_energy(layer,layer_param);
-//    std::cout<<"Energy check E1: "<<E1<<"\n";
-//
-//    std::cout<<"\n--t=0--\n";
-//    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-//    Dtype Eng = this->compute_energy(layer,layer_param);
-//
-//    std::cout<<"Energy check t=0 E="<<Eng<<"\n";
-//    //CHECK_LE(Eng,E1)
-//
-//    vector<Blob<Dtype>*> new_blob_bottom_vec_;
-//    for (int t = 1; t < 3; ++t) { 
-//        std::cout<<"\n--t="<<t<<"--\n";
-//        new_blob_bottom_vec_.clear();
-//        new_blob_bottom_vec_.push_back(this->blob_bottom_vec_[0]);
-//        new_blob_bottom_vec_.push_back(this->blob_top_vec_[0]);
-//        layer->Forward(new_blob_bottom_vec_, this->blob_top_vec_);
-//        //this->blob_bottom_vec_[1] = this->blob_top_vec_[0];
-//        //layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-//        Eng = this->compute_energy(layer,layer_param);
-//        std::cout<<"Energy check t="<<t<<" E="<<Eng<<"\n";
-//    }
-//
-//    //Dtype E2 = this->compute_energy(layer,layer_param);
-//    //CHECK_LE(E2,E1);
-//    CHECK_LE(Eng,E1);
+//    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+//          this->blob_top_vec_);
 //  }
-//}
-
-//TYPED_TEST(SparseLayerTest, TestUnitGradient) {
 //}
 
 

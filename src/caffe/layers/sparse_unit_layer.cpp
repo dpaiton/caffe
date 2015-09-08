@@ -74,7 +74,7 @@ void SparseUnitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   identity_matrix_.Reshape(competition_matrix_shape);
   caffe_set(identity_matrix_.count(), (Dtype)0.,
       identity_matrix_.mutable_cpu_data());
-  for (int i=0; i<K_; ++i) {
+  for (int i = 0; i < K_; ++i) {
     identity_matrix_.mutable_cpu_data()[i*K_ + i] = 1;
   }
 
@@ -94,10 +94,10 @@ template <typename Dtype>
 void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  const Dtype* in_data    = bottom[0]->cpu_data();       // input  :: M_xN_
-  const Dtype* weights    = this->blobs_[0]->cpu_data(); // phi    :: N_xK_
-  Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output :: M_xK_
-  const Dtype* a_past     = bottom[1]->cpu_data();
+  const Dtype* in_data    = bottom[0]->cpu_data();       // data     :: M_xN_
+  const Dtype* a_past     = bottom[1]->cpu_data();       // activity :: M_xK_
+  const Dtype* weights    = this->blobs_[0]->cpu_data(); // phi      :: N_xK_
+  Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output   :: M_xK_
 
   if (bias_term_) {
     const Dtype* bias = this->blobs_[1]->cpu_data(); // bias   :: 1xN_
@@ -152,7 +152,7 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
         weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
 
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, K_, -eta_,
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, K_, eta_,
         biased_input_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
   }
   
@@ -169,7 +169,7 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
   if (propagate_down[0]) { // Data graident
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, eta_,
-        top[0]->cpu_diff(), weights, (Dtype)1., bottom[0]->mutable_cpu_diff());
+        top[0]->cpu_diff(), weights, (Dtype)0., bottom[0]->mutable_cpu_diff());
   }
 
   if (propagate_down[1]) { // Activity gradient
@@ -179,9 +179,13 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
         backprop_multiplier_.mutable_cpu_data()); 
 
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, (Dtype)1.,
-      top[0]->cpu_diff(), backprop_multiplier_.cpu_data(), (Dtype)1.,
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, K_, K_, (Dtype)1.,
+      top[0]->cpu_diff(), backprop_multiplier_.cpu_data(), (Dtype)0.,
       bottom[1]->mutable_cpu_diff());
+
+    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, K_, K_, (Dtype)1.,
+    //  top[0]->cpu_diff(), identity_matrix_.cpu_data(), (Dtype)0.,
+    //  bottom[1]->mutable_cpu_diff());
   }
 }
 
