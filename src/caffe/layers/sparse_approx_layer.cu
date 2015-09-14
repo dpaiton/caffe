@@ -77,17 +77,18 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
 
-    // GradientStats
-    stringstream ss;
-    ss << "Iter\telem_mean\t\tgrad_mean\t\tgrad_var\n";
+    //// GradientStats
+    //stringstream ss;
+    //ss << "Iter\telem_mean\t\tgrad_mean\t\tgrad_var\n";
 
     const Dtype* weights = this->blobs_[0]->gpu_data();
     Dtype* bottom_diff   = bottom[0]->mutable_gpu_diff();
     Dtype* weights_diff  = this->blobs_[0]->mutable_gpu_diff();
     Dtype* bias_diff     = this->blobs_[1]->mutable_gpu_diff();
 
-    const Dtype* cpu_weights = this->blobs_[0]->cpu_data();
-    const Dtype* cpu_weights_diff  = this->blobs_[0]->cpu_diff();
+    //// GradientStats
+    //const Dtype* cpu_weights = this->blobs_[0]->cpu_data();
+    //const Dtype* cpu_weights_diff  = this->blobs_[0]->cpu_diff();
 
     // Clear bottom diff
     caffe_gpu_set(bottom[0]->count(), (Dtype)0., bottom_diff);
@@ -101,14 +102,14 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     // First iteration holds top_diff
     caffe_copy(top[0]->count(), top[0]->gpu_diff(), temp_tdiff_.mutable_gpu_diff());
 
-    // GradientStats
-    Dtype data_mean = 0;
-    Dtype grad_mean = 0;
-    //Dtype grad_std  = 0;
-    Dtype temp      = 0;
+    //// GradientStats
+    //Dtype data_mean = 0;
+    //Dtype grad_mean = 0;
+    ////Dtype grad_std  = 0;
+    //Dtype temp      = 0;
     for (int iteration = num_iterations_-1; iteration >= 0; --iteration) {
-        // GradientStats
-        ss << iteration << "\t";
+        //// GradientStats
+        //ss << iteration << "\t";
 
         // Weight gradient
         if (this->param_propagate_down_[0]) {
@@ -133,24 +134,24 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               biased_input_.gpu_data(), temp_tdiff_.gpu_diff(), (Dtype)1.,
               weights_diff);
 
-            // GradientStats
-            for (int el = 0; el < N_; ++el) {
-                data_mean += (cpu_weights[el] > Dtype(0.)) ? cpu_weights[el] : -cpu_weights[el];
-                grad_mean += (cpu_weights_diff[el] > Dtype(0.)) ? cpu_weights_diff[el] : -cpu_weights_diff[el];
-            }
-            data_mean /= this->blobs_[0]->count();
-            grad_mean /= this->blobs_[0]->count();
-            Dtype grad_var = 0;
-            for (int i = 0; i < this->blobs_[0]->count(); ++i) {
-                temp = (cpu_weights_diff[i] > Dtype(0.)) ? cpu_weights_diff[i] : -cpu_weights_diff[i];
-                grad_var += (temp - grad_mean) * (temp - grad_mean);
-            }
-            grad_var /= this->blobs_[0]->count();
-            //grad_std = sqrt(grad_var);
-            ss << std::scientific << data_mean << "\t\t";
-            ss << std::scientific << grad_mean << "\t\t";
-            ss << std::scientific << grad_var << "\t\t";
-	    ss << "\n";
+            //// GradientStats
+            //for (int el = 0; el < N_; ++el) {
+            //    data_mean += (cpu_weights[el] > Dtype(0.)) ? cpu_weights[el] : -cpu_weights[el];
+            //    grad_mean += (cpu_weights_diff[el] > Dtype(0.)) ? cpu_weights_diff[el] : -cpu_weights_diff[el];
+            //}
+            //data_mean /= this->blobs_[0]->count();
+            //grad_mean /= this->blobs_[0]->count();
+            //Dtype grad_var = 0;
+            //for (int i = 0; i < this->blobs_[0]->count(); ++i) {
+            //    temp = (cpu_weights_diff[i] > Dtype(0.)) ? cpu_weights_diff[i] : -cpu_weights_diff[i];
+            //    grad_var += (temp - grad_mean) * (temp - grad_mean);
+            //}
+            //grad_var /= this->blobs_[0]->count();
+            ////grad_std = sqrt(grad_var);
+            //ss << std::scientific << data_mean << "\t\t";
+            //ss << std::scientific << grad_mean << "\t\t";
+            //ss << std::scientific << grad_var << "\t\t";
+	    //ss << "\n";
         }
 
         // Bias gradient
@@ -179,9 +180,9 @@ void SparseApproxLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         caffe_copy(temp_tdiff_.count(), temp_tdiff_.gpu_diff(), top[0]->mutable_gpu_diff());
     }
 
-    // GradientStats
-    ss << "\n";
-    stats_string_ = ss.str();
+    //// GradientStats
+    //ss << "\n";
+    //stats_string_ = ss.str();
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(SparseApproxLayer);

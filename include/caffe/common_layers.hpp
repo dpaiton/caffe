@@ -359,8 +359,8 @@ class SparseApproxLayer: public Layer<Dtype> {
       Reshape(bottom,top);
   }
 
-  // for GradientStats
-  virtual inline string GetLayerStats() { return stats_string_; }
+  //// for GradientStats
+  //virtual inline string GetLayerStats() { return stats_string_; }
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -388,8 +388,8 @@ class SparseApproxLayer: public Layer<Dtype> {
   Blob<Dtype> identity_matrix_;     // N_ x N_
   Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
 
-  // for GradientStats
-  string stats_string_;
+  //// for GradientStats
+  //string stats_string_;
 };
 
 /**
