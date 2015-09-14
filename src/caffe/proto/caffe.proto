@@ -234,6 +234,10 @@ message SolverParameter {
 
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
+
+  // If true, display weight and gradient statistics for sparseapproximation layer (GradientStats)
+  optional bool display_stats = 40 [default = false];
+  optional int32 stats_iter = 41 [default = 1];
 }
 
 // A message that stores the solver snapshots
@@ -301,7 +305,8 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 139 (last added: tile_param)
+// LayerParameter next available layer-specific ID: 140 (last added: sparse_approx_param)
+
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -365,6 +370,7 @@ message LayerParameter {
   optional HingeLossParameter hinge_loss_param = 114;
   optional ImageDataParameter image_data_param = 115;
   optional InfogainLossParameter infogain_loss_param = 116;
+  optional SparseApproxParameter sparse_approx_param = 139;
   optional InnerProductParameter inner_product_param = 117;
   optional LogParameter log_param = 134;
   optional LRNParameter lrn_param = 118;
@@ -662,6 +668,25 @@ message ImageDataParameter {
 message InfogainLossParameter {
   // Specify the infogain matrix source.
   optional string source = 1;
+}
+
+message SparseApproxParameter {
+  // TODO: Set default fillers?
+  optional FillerParameter weight_filler = 1; // The filler for the weight
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter bias_filler = 3; // The filler for the bias
+
+  // num_elements will determine overcompleteness
+  // e.g. for 2x overcomplete, num_elements = num pixels in input patch * 2
+  optional int32 num_elements = 4 [default = 128];
+
+  // membrane potential charges over a number of iterations
+  // the longer you wait, the better the reconstruction
+  optional int32 num_iterations = 5 [default = 1];
+
+  optional float lambda = 6 [default = 0.1];
+  optional float eta = 7 [default = 0.001];
+  optional float gamma = 8 [default = 0];
 }
 
 message InnerProductParameter {
@@ -1081,13 +1106,13 @@ message V1LayerParameter {
 message V0LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the string to specify the layer type
-
+  
   // Parameters to specify layers with inner products.
   optional uint32 num_output = 3; // The number of outputs for the layer
   optional bool biasterm = 4 [default = true]; // whether to have bias terms
   optional FillerParameter weight_filler = 5; // The filler for the weight
   optional FillerParameter bias_filler = 6; // The filler for the bias
-
+  
   optional uint32 pad = 7 [default = 0]; // The padding size
   optional uint32 kernelsize = 8; // The kernel size
   optional uint32 group = 9 [default = 1]; // The group size for group conv
@@ -1099,7 +1124,7 @@ message V0LayerParameter {
   }
   optional PoolMethod pool = 11 [default = MAX]; // The pooling method
   optional float dropout_ratio = 12 [default = 0.5]; // dropout ratio
-
+  
   optional uint32 local_size = 13 [default = 5]; // for local response norm
   optional float alpha = 14 [default = 1.]; // for local response norm
   optional float beta = 15 [default = 0.75]; // for local response norm

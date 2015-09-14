@@ -1,0 +1,124 @@
+name: "MLP"
+
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.0039215684
+    mean_file: "data/mnist/mnist_mean.binaryproto"
+  }
+  data_param {
+    source: "examples/mnist/mnist_train_50K_lmdb"
+    batch_size: 100 # 2 GPUs makes batch_size = 100
+    backend: LMDB
+  }
+}
+
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.0039215684
+    mean_file: "data/mnist/mnist_mean.binaryproto"
+  }
+  data_param {
+    source: "examples/mnist/mnist_val_10K_lmdb"
+    batch_size: 100 # 2 GPUs makes batch_size = 100 
+    backend: LMDB
+  }
+}
+
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "ip1"
+  param {
+    name: "phi"
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    name: "bias"
+    lr_mult: 1
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+    name: "relu"
+    type: "ReLU"
+    bottom: "ip1"
+    top: "ip1"
+}
+
+layer {
+    name: "ip2"
+    type: "InnerProduct"
+    bottom: "ip1"
+    top: "ip2"
+    param {
+        lr_mult: 1
+	decay_mult: 1
+    }
+    param {
+        lr_mult: 1
+	decay_mult: 0
+    }
+    inner_product_param {
+        num_output: 10
+        weight_filler {
+	    type: "gaussian"
+        std: 0.01
+        }
+        bias_filler {
+          type: "constant"
+          value: 0
+        }
+    }
+}
+
+layer {
+    name: "accuracy"
+    type: "Accuracy"
+    bottom: "ip2"
+    bottom: "label"
+    top: "accuracy"
+    include {
+        phase: TEST
+    }
+}
+
+layer {
+    name: "softmax_loss"
+    type: "SoftmaxWithLoss"
+    bottom: "ip2"
+    bottom: "label"
+    top: "softmax_loss"
+    loss_weight: 1
+    loss_param {
+        ignore_label: -1
+        normalize: false # if true -  normalize by count
+    }
+}

@@ -329,6 +329,70 @@ class FlattenLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Performs ISTA l1 sparse approximation
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ **/
+template <typename Dtype>
+class SparseApproxLayer: public Layer<Dtype> {
+ public:
+  explicit SparseApproxLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "SparseApprox"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+  /**
+   *  @brief Function is used for testing, allows you to modify
+   *         the number of iterations without changing initial
+   *         input or weight values.
+  **/
+  virtual inline void SetNumIterations(int num_iterations, 
+          const vector<Blob<Dtype>*>& bottom,
+          const vector<Blob<Dtype>*>& top) {
+      num_iterations_ = num_iterations;
+      Reshape(bottom,top);
+  }
+
+  //// for GradientStats
+  //virtual inline string GetLayerStats() { return stats_string_; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int N_; // Num neurons (also num basis vectors)
+  int K_; // Num pixels in input (also length of basis vectors)
+  int M_; // Batch size
+  int num_iterations_; 
+  Dtype lambda_, eta_, gamma_;
+  bool bias_term_;
+
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_, temp_tdiff_;
+  Blob<Dtype> biased_input_;        // M_xK_
+  Blob<Dtype> excitatory_input_;    // <input, phi^T> has dim M_xN_
+  Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_
+  Blob<Dtype> activity_history_;    // num_iterations x M_ x N_
+  Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
+  Blob<Dtype> identity_matrix_;     // N_ x N_
+  Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
+
+  //// for GradientStats
+  //string stats_string_;
+};
+
+/**
  * @brief Also known as a "fully-connected" layer, computes an inner product
  *        with a set of learned weights, and (optionally) adds biases.
  *

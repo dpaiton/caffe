@@ -15,6 +15,8 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/upgrade_proto.hpp"
 
+#include "caffe/common_layers.hpp"
+
 namespace caffe {
 
 template<typename Dtype>
@@ -261,6 +263,20 @@ void Solver<Dtype>::Step(int iters) {
         }
       }
     }
+    //// for GradientStats
+    //if (iter_ % param_.stats_iter() == 0 && param_.display_stats()) {
+    //  int lnum = 0;
+    //  for (int l = 0; l < this->net_.get()->layers().size(); ++l) {
+    //      Layer<Dtype>& layer = *(this->net_.get()->layers()[l].get());
+    //      string layer_type = string(layer.layer_param().type());
+    //      if (!layer_type.compare("SparseApprox")) {
+    //          lnum = l;
+    //      }
+    //  }
+    //  LOG(INFO) << "== Print weight & gradient stats ==";
+    //  LOG(INFO) << "\n" << this->net_.get()->layers()[lnum].get()->GetLayerStats();
+    //  LOG(INFO) << "===================================";
+    //}
     for (int i = 0; i < callbacks_.size(); ++i) {
       callbacks_[i]->on_gradients_ready();
     }
