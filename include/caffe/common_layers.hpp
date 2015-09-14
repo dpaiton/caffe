@@ -367,8 +367,6 @@ class SparseUnitLayer: public Layer<Dtype> {
   Blob<Dtype> biased_input_;        // M_xK_
   Blob<Dtype> competition_matrix_;  // <phi,phi^T> has dim N_xN_
   Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim
-  Blob<Dtype> backprop_multiplier_; // df/da for backprop through time
-  Blob<Dtype> identity_matrix_;     // N_xN_
 };
 
 /**

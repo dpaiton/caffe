@@ -18,7 +18,7 @@ void SparseUnitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   bias_term_ = this->layer_param_.sparse_unit_param().bias_term();
 
   M_ = bottom[0]->shape(0); // batch size
-  K_ = bottom[1]->count(1); // num elements, also num features
+  K_ = bottom[1]->count(1); // num elements (features)
   N_ = bottom[0]->count(1); // num pixels per batch
 
   if (bias_term_) {
@@ -42,7 +42,7 @@ void SparseUnitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     vector<int> bias_shape(1,N_);
     this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
     shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
-        this->layer_param_.inner_product_param().bias_filler()));
+        this->layer_param_.sparse_unit_param().bias_filler()));
     bias_filler->Fill(this->blobs_[1].get());
   }
 }
@@ -67,15 +67,6 @@ void SparseUnitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     vector<int> batch_mult_shape(1, M_);
     batch_multiplier_.Reshape(batch_mult_shape);
     caffe_set(M_, (Dtype)1., batch_multiplier_.mutable_cpu_data());
-  }
-
-  backprop_multiplier_.Reshape(competition_matrix_shape);
-
-  identity_matrix_.Reshape(competition_matrix_shape);
-  caffe_set(identity_matrix_.count(), (Dtype)0.,
-      identity_matrix_.mutable_cpu_data());
-  for (int i = 0; i < K_; ++i) {
-    identity_matrix_.mutable_cpu_data()[i*K_ + i] = 1;
   }
 
   vector<int>temp_shape(2);
@@ -140,20 +131,23 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const Dtype* a_past = bottom[1]->cpu_data();
     Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
 
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
-        a_past, weights, (Dtype)0., temp_1_.mutable_cpu_data());
+    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
+    //    a_past, weights, (Dtype)0., temp_1_.mutable_cpu_data());
 
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
-        a_past, top[0]->cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
+    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
+    //    a_past, top[0]->cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
 
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
-        temp_1_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
+    //caffe_set(temp_1_.count(), (Dtype)0., temp_1_.mutable_cpu_data());
+    //caffe_set(temp_2_.count(), (Dtype)0., temp_2_.mutable_cpu_data());
 
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
-        weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
+    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
+    //    temp_1_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
+
+    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
+    //    weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
 
     caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, K_, eta_,
-        biased_input_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
+        bottom[0]->cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
   }
   
   if (bias_term_ && this->param_propagate_down_[1]) { // Bias gradient
@@ -173,19 +167,11 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
 
   if (propagate_down[1]) { // Activity gradient
-    caffe_copy(backprop_multiplier_.count(), identity_matrix_.cpu_data(),
-        backprop_multiplier_.mutable_cpu_data());
+    caffe_copy(bottom[1]->count(), top[0]->cpu_diff(), bottom[1]->mutable_cpu_diff());
 
-    caffe_axpy(backprop_multiplier_.count(), -eta_, competition_matrix_.cpu_data(),
-        backprop_multiplier_.mutable_cpu_data()); 
-
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, K_, K_, (Dtype)1.,
-      top[0]->cpu_diff(), backprop_multiplier_.cpu_data(), (Dtype)0.,
-      bottom[1]->mutable_cpu_diff());
-
-    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, K_, K_, (Dtype)1.,
-    //  top[0]->cpu_diff(), identity_matrix_.cpu_data(), (Dtype)0.,
-    //  bottom[1]->mutable_cpu_diff());
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, -eta_,
+        top[0]->cpu_diff(), competition_matrix_.cpu_data(), (Dtype)1., 
+        bottom[1]->mutable_cpu_diff());
   }
 }
 

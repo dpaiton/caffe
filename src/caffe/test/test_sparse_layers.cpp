@@ -38,7 +38,7 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
     // fill the values
     FillerParameter filler_param;
     filler_param.set_min(0);
-    filler_param.set_max(1);
+    filler_param.set_max(0);
     UniformFiller<Dtype> dat_filler(filler_param);
     dat_filler.Fill(this->blob_bottom_0_);
 
@@ -117,198 +117,84 @@ TYPED_TEST_CASE(SparseLayerTest, TestDtypesAndDevices);
 //  EXPECT_EQ(this->blob_top_->shape(1), 10); // N_ -> Elements
 //}
 
-TYPED_TEST(SparseLayerTest, TestUnitForward) {
-  typedef typename TypeParam::Dtype Dtype;
-  bool IS_VALID_CUDA = false;
-  #ifndef CPU_ONLY
-  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
-  #endif
-  
-  if (Caffe::mode() == Caffe::CPU ||
-      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-    LayerParameter layer_param;
-    SparseUnitParameter* sparse_unit_param =
-        layer_param.mutable_sparse_unit_param();
-
-    sparse_unit_param->set_lambda(0);
-    sparse_unit_param->set_eta(0.01);
-    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
-    sparse_unit_param->mutable_weight_filler()->set_min(0);
-    sparse_unit_param->mutable_weight_filler()->set_max(0.1);
-    sparse_unit_param->set_bias_term(false);
-    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
-    sparse_unit_param->mutable_bias_filler()->set_min(0);
-    sparse_unit_param->mutable_bias_filler()->set_max(0.5);
-
-    shared_ptr<SparseUnitLayer<Dtype> > layer(
-        new SparseUnitLayer<Dtype>(layer_param));
-
-    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-    Dtype E1 = this->compute_energy(layer,layer_param);
-
-    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    Dtype prev_eng = this->compute_energy(layer,layer_param);
-
-    CHECK_LE(prev_eng,E1);
-
-    for (int t = 0; t < 5; ++t) {
-      caffe_copy(this->blob_bottom_vec_[1]->count(), this->blob_top_vec_[0]->cpu_data(), this->blob_bottom_vec_[1]->mutable_cpu_data());
-      layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-      Dtype eng = this->compute_energy(layer,layer_param);
-      CHECK_LE(eng,prev_eng);
-      prev_eng = eng;
-    }
-  }
-}
-
-//TYPED_TEST(SparseLayerTest, TestUnitGradient) {
+//TYPED_TEST(SparseLayerTest, TestUnitForward) {
 //  typedef typename TypeParam::Dtype Dtype;
-//
 //  bool IS_VALID_CUDA = false;
 //  #ifndef CPU_ONLY
 //  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
 //  #endif
-//
+//  
 //  if (Caffe::mode() == Caffe::CPU ||
 //      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-//
 //    LayerParameter layer_param;
-//    SparseUnitParameter * sparse_unit_param = 
+//    SparseUnitParameter* sparse_unit_param =
 //        layer_param.mutable_sparse_unit_param();
 //
 //    sparse_unit_param->set_lambda(0.1);
 //    sparse_unit_param->set_eta(0.01);
 //    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
 //    sparse_unit_param->mutable_weight_filler()->set_min(0);
-//    sparse_unit_param->mutable_weight_filler()->set_max(0);
-//    sparse_unit_param->set_bias_term(false);
-//    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
-//    sparse_unit_param->mutable_bias_filler()->set_min(0);
-//    sparse_unit_param->mutable_bias_filler()->set_max(0.5);
-//
-//    SparseUnitLayer<Dtype> layer(layer_param);
-//
-//    Dtype stepsize  = 1e-2;
-//    Dtype threshold = 1e-3;
-//    GradientChecker<Dtype> checker(stepsize, threshold);
-//
-//    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-//          this->blob_top_vec_);
-//  }
-//}
-
-
-//TYPED_TEST(SparseLayerTest, TestForward) {
-//  typedef typename TypeParam::Dtype Dtype;
-//  bool IS_VALID_CUDA = false;
-//#ifndef CPU_ONLY
-//  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
-//#endif
-//  if (Caffe::mode() == Caffe::CPU ||
-//      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-//
-//    //Set params
-//    LayerParameter layer_param;
-//    SparseUnitParameter* sparse_unit_param =
-//        layer_param.mutable_sparse_unit_param();
-//
-//    sparse_unit_param->set_lambda(0.01);
-//    sparse_unit_param->set_eta(0.1);
-//    sparse_unit_param->set_bias_term(true);
-//
-//    // Set weights
-//    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
-//    sparse_unit_param->mutable_weight_filler()->set_min(0);
 //    sparse_unit_param->mutable_weight_filler()->set_max(1);
-//
-//    // Set bias
+//    sparse_unit_param->set_bias_term(true);
 //    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
 //    sparse_unit_param->mutable_bias_filler()->set_min(0);
 //    sparse_unit_param->mutable_bias_filler()->set_max(0.5);
 //
-//    // Create layer
 //    shared_ptr<SparseUnitLayer<Dtype> > layer(
 //        new SparseUnitLayer<Dtype>(layer_param));
 //
-//    // Setup
 //    layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-//
-//    // Compute E1
 //    Dtype E1 = this->compute_energy(layer,layer_param);
 //
-//    // Forward Pass
 //    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+//    Dtype prev_eng = this->compute_energy(layer,layer_param);
 //
-//    // Compute E2
-//    Dtype E2 = this->compute_energy(layer,layer_param);
+//    CHECK_LE(prev_eng,E1);
 //
-//    // Again with more iterations
-//    layer->SetNumIterations(6,this->blob_bottom_vec_,this->blob_top_vec_);
-//    layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-//
-//    // Compute E3
-//    Dtype E3 = this->compute_energy(layer,layer_param);
-//
-//    //Make sure E3 < E2 < E1
-//    CHECK_LE(E2,E1);
-//    CHECK_LE(E3,E2);
-//    
-//  } else {
-//    LOG(ERROR) << "Skipping test due to old architecture.";
+//    for (int t = 0; t < 10; ++t) {
+//      caffe_copy(this->blob_bottom_vec_[1]->count(), this->blob_top_vec_[0]->cpu_data(), this->blob_bottom_vec_[1]->mutable_cpu_data());
+//      layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
+//      Dtype eng = this->compute_energy(layer,layer_param);
+//      CHECK_LE(eng,prev_eng);
+//      prev_eng = eng;
+//    }
 //  }
 //}
 
-//TYPED_TEST(SparseLayerTest, TestGradient) {
-//  typedef typename TypeParam::Dtype Dtype;
-//  bool IS_VALID_CUDA = false;
-//
-//#ifndef CPU_ONLY
-//  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
-//#endif
-//
-//  if (Caffe::mode() == Caffe::CPU ||
-//      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
-//
-//    LayerParameter layer_param;
-//
-//    SparseUnitParameter* sparse_unit_param =
-//        layer_param.mutable_sparse_unit_param();
-//
-//    sparse_unit_param->set_num_iterations(10);
-//    sparse_unit_param->set_num_elements(2);
-//    sparse_unit_param->set_eta(0.2);
-//    sparse_unit_param->set_lambda(0.1);
-//
-//    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
-//    sparse_unit_param->mutable_weight_filler()->set_min(0);
-//    sparse_unit_param->mutable_weight_filler()->set_max(1);
-//
-//    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
-//    sparse_unit_param->mutable_bias_filler()->set_min(0);
-//    sparse_unit_param->mutable_bias_filler()->set_max(1);
-//
-//    sparse_unit_param->set_bias_term(true);
-//
-//    SparseUnitLayer<Dtype> layer(layer_param);
-//
-//    Dtype stepsize  = 1e-2;
-//    Dtype threshold = 1e-3;
-//    GradientChecker<Dtype> checker(stepsize, threshold);
-//
-//    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
-//        this->blob_top_vec_);
-//
-//    sparse_unit_param->set_eta(2);
-//
-//    SparseUnitLayer<Dtype> layer2(layer_param);
-//    GradientChecker<Dtype> checker2(stepsize, threshold);
-//
-//    checker2.CheckGradientExhaustive(&layer2, this->blob_bottom_vec_,
-//        this->blob_top_vec_);
-//
-//  } else {
-//    LOG(ERROR) << "Skipping test due to old architecture.";
-//  }
-//}
+TYPED_TEST(SparseLayerTest, TestUnitGradient) {
+  typedef typename TypeParam::Dtype Dtype;
+
+  bool IS_VALID_CUDA = false;
+  #ifndef CPU_ONLY
+  IS_VALID_CUDA = CAFFE_TEST_CUDA_PROP.major >= 2;
+  #endif
+
+  if (Caffe::mode() == Caffe::CPU ||
+      sizeof(Dtype) == 4 || IS_VALID_CUDA) {
+
+    LayerParameter layer_param;
+    SparseUnitParameter * sparse_unit_param = 
+        layer_param.mutable_sparse_unit_param();
+
+    sparse_unit_param->set_lambda(0);
+    sparse_unit_param->set_eta(1);
+    sparse_unit_param->mutable_weight_filler()->set_type("uniform");
+    sparse_unit_param->mutable_weight_filler()->set_min(1);
+    sparse_unit_param->mutable_weight_filler()->set_max(1);
+    sparse_unit_param->set_bias_term(true);
+    sparse_unit_param->mutable_bias_filler()->set_type("uniform");
+    sparse_unit_param->mutable_bias_filler()->set_min(0);
+    sparse_unit_param->mutable_bias_filler()->set_max(0);
+
+    SparseUnitLayer<Dtype> layer(layer_param);
+
+    Dtype stepsize  = 1e-2;
+    Dtype threshold = 1e-3;
+    GradientChecker<Dtype> checker(stepsize, threshold);
+
+    checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+          this->blob_top_vec_);
+  }
+}
 
 }  // namespace caffe
