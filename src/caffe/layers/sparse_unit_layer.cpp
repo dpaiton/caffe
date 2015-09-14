@@ -131,23 +131,21 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const Dtype* a_past = bottom[1]->cpu_data();
     Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
 
-    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
-    //    a_past, weights, (Dtype)0., temp_1_.mutable_cpu_data());
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
+        a_past, weights, (Dtype)0., temp_1_.mutable_cpu_data());
 
-    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
-    //    a_past, top[0]->cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, M_, (Dtype)1.,
+        a_past, top[0]->cpu_diff(), (Dtype)0., temp_2_.mutable_cpu_data());
 
-    //caffe_set(temp_1_.count(), (Dtype)0., temp_1_.mutable_cpu_data());
-    //caffe_set(temp_2_.count(), (Dtype)0., temp_2_.mutable_cpu_data());
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
+        temp_1_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
 
-    //caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, -eta_,
-    //    temp_1_.cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
+        weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
 
-    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, N_, K_, K_, -eta_,
-    //    weights, temp_2_.cpu_data(), (Dtype)1., weights_diff);
-
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, K_, eta_,
-        bottom[0]->cpu_data(), top[0]->cpu_diff(), (Dtype)1., weights_diff);
+    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, eta_,
+        biased_input_.cpu_data(), top[0]->cpu_diff(), (Dtype)1.,
+        weights_diff);
   }
   
   if (bias_term_ && this->param_propagate_down_[1]) { // Bias gradient
