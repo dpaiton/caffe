@@ -30,21 +30,22 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     caffe_copy(bottom[0]->count(), in_data, biased_input_.mutable_gpu_data());
   }
 
+  // competition_matrix_ = w^Tw
   caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, N_, (Dtype)1.,
       weights, weights, (Dtype)0., competition_matrix_.mutable_gpu_data());
 
   // top = sgn(a[t-1])
   caffe_gpu_sign(top[0]->count(), a_past, mutable_top_data);
 
-  // top = (s-b) w - lambda_ sgn(a[t-1])
+  // top = a[t-1] G + lambda_ sgn(a[t-1])
+  caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, (Dtype)1.,
+      a_past, competition_matrix_.gpu_data(), lambda_, mutable_top_data);
+
+  // top = (s-b) w - (a[t-1] G + lambda_ sgn(a[t-1]))
   caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
-      biased_input_.gpu_data(), weights, -lambda_, mutable_top_data);
+      biased_input_.gpu_data(), weights, (Dtype)-1., mutable_top_data);
 
-  // top = (s-b) w - lambda_ sgn(a[t-1]) - a[t-1] G
-  caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, (Dtype)-1.,
-      a_past, competition_matrix_.gpu_data(), (Dtype)1., mutable_top_data);
-
-  // a[t-1] + eta_ (ext - a[t-1] G - lambda_ sgn(a[t-1]))
+  // a[t-1] + eta_ ((s-b) w - a[t-1] G - lambda_ sgn(a[t-1]))
   caffe_gpu_axpby(top[0]->count(), (Dtype)1., a_past, eta_, mutable_top_data);
 }
 

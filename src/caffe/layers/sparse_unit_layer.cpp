@@ -85,10 +85,10 @@ template <typename Dtype>
 void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  const Dtype* in_data    = bottom[0]->cpu_data();       // data     :: M_xN_
-  const Dtype* a_past     = bottom[1]->cpu_data();       // activity :: M_xK_
-  const Dtype* weights    = this->blobs_[0]->cpu_data(); // phi      :: N_xK_
-  Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output   :: M_xK_
+  const Dtype* in_data    = bottom[0]->cpu_data();       // data   :: M_xN_
+  const Dtype* a_past     = bottom[1]->cpu_data();       // a(t-1) :: M_xK_
+  const Dtype* weights    = this->blobs_[0]->cpu_data(); // phi    :: N_xK_
+  Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output :: M_xK_
 
   if (bias_term_) {
     const Dtype* bias = this->blobs_[1]->cpu_data(); // bias   :: 1xN_
@@ -109,13 +109,13 @@ void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // top = sgn(a[t-1])
   caffe_cpu_sign(top[0]->count(), a_past, mutable_top_data);
 
-  // top = (s-b) w - lambda_ sgn(a[t-1])
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
-      biased_input_.cpu_data(), weights, -lambda_, mutable_top_data);
+  // top = a[t-1] G + lambda_ sgn(a[t-1])
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, (Dtype)1.,
+      a_past, competition_matrix_.cpu_data(), lambda_, mutable_top_data);
 
-  // top = (s-b) w - lambda_ sgn(a[t-1]) - a[t-1] G
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, (Dtype)-1.,
-      a_past, competition_matrix_.cpu_data(), (Dtype)1., mutable_top_data);
+  // top = (s-b) w - (a[t-1] G + lambda_ sgn(a[t-1]))
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
+      biased_input_.cpu_data(), weights, (Dtype)-1., mutable_top_data);
 
   // a[t-1] + eta_ ((s-b) w - a[t-1] G - lambda_ sgn(a[t-1]))
   caffe_cpu_axpby(top[0]->count(), (Dtype)1., a_past, eta_, mutable_top_data);
