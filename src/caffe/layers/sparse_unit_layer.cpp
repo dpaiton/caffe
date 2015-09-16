@@ -123,7 +123,7 @@ void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_copy(bottom[0]->count(), bottom[0]->cpu_data(), biased_input_.mutable_cpu_data());
   }
 
-  // competition_matrix_ = phi^T phi
+  // competition_matrix_ = phi^Tphi
   caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, N_, (Dtype)1.,
       weights, weights, (Dtype)0., competition_matrix_.mutable_cpu_data());
 
