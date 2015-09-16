@@ -48,7 +48,6 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
     act_filler.Fill(this->blob_bottom_1_);
 
     blob_bottom_vec_.push_back(blob_bottom_0_);
-    blob_bottom_vec_.push_back(blob_bottom_1_);
     blob_top_vec_.push_back(blob_top_);
   }
 
@@ -65,7 +64,12 @@ class SparseLayerTest : public MultiDeviceTest<TypeParam> {
     int num_channels = this->blob_bottom_vec_[0]->shape(1); // C
     int num_pixelsH  = this->blob_bottom_vec_[0]->shape(2); // H
     int num_pixelsW  = this->blob_bottom_vec_[0]->shape(3); // W
-    int num_elements = this->blob_bottom_vec_[1]->count(1); // M
+    int num_elements; // M
+    if (this->blob_bottom_vec_.size() == 2) {
+        num_elements = this->blob_bottom_vec_[1]->count(1);
+    } else {
+        num_elements = layer_param.mutable_sparse_unit_param()->num_elements();
+    }
     Dtype E = 0;
     for (int b=0; b < batch_size; ++b) {                    // batch
       Dtype residual_err = 0;
@@ -108,6 +112,9 @@ TYPED_TEST(SparseLayerTest, TestUnitSetUp) {
 
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
+  SparseUnitParameter* sparse_unit_param =
+      layer_param.mutable_sparse_unit_param();
+  sparse_unit_param->set_num_elements(8);
 
   shared_ptr<SparseUnitLayer<Dtype> > layer(
       new SparseUnitLayer<Dtype>(layer_param));
@@ -115,9 +122,9 @@ TYPED_TEST(SparseLayerTest, TestUnitSetUp) {
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   EXPECT_EQ(layer->blobs()[0]->shape(0), 3*4); // K_ -> Pixels
-  EXPECT_EQ(layer->blobs()[0]->shape(1), 8); // N_ -> Elements
-  EXPECT_EQ(this->blob_top_->shape(0), 3);   // M_ -> Batch
-  EXPECT_EQ(this->blob_top_->shape(1), 8);   // N_ -> Elements
+  EXPECT_EQ(layer->blobs()[0]->shape(1), 8);   // N_ -> Elements
+  EXPECT_EQ(this->blob_top_->shape(0), 3);     // M_ -> Batch
+  EXPECT_EQ(this->blob_top_->shape(1), 8);     // N_ -> Elements
 }
 
 TYPED_TEST(SparseLayerTest, TestUnitForward) {
@@ -135,6 +142,7 @@ TYPED_TEST(SparseLayerTest, TestUnitForward) {
 
     sparse_unit_param->set_lambda(0.01);
     sparse_unit_param->set_eta(0.1);
+    sparse_unit_param->set_num_elements(8);
     sparse_unit_param->mutable_weight_filler()->set_type("uniform");
     sparse_unit_param->mutable_weight_filler()->set_min(0);
     sparse_unit_param->mutable_weight_filler()->set_max(0.1);
@@ -149,6 +157,7 @@ TYPED_TEST(SparseLayerTest, TestUnitForward) {
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     Dtype prev_eng = this->compute_energy(layer,layer_param);
+    this->blob_bottom_vec_.push_back(this->blob_bottom_1_);
 
     for (int t = 0; t < 10; ++t) {
       caffe_copy(this->blob_bottom_vec_[1]->count(), this->blob_top_vec_[0]->cpu_data(),
@@ -178,6 +187,7 @@ TYPED_TEST(SparseLayerTest, TestUnitGradient) {
 
     sparse_unit_param->set_lambda(0.01);
     sparse_unit_param->set_eta(0.1);
+    sparse_unit_param->set_num_elements(8);
     sparse_unit_param->mutable_weight_filler()->set_type("uniform");
     sparse_unit_param->mutable_weight_filler()->set_min(0);
     sparse_unit_param->mutable_weight_filler()->set_max(0.1);
@@ -194,6 +204,10 @@ TYPED_TEST(SparseLayerTest, TestUnitGradient) {
     Dtype kink = 0;
     Dtype kink_range = 0.1;
     GradientChecker<Dtype> checker(stepsize, threshold, seed, kink, kink_range);
+
+    if (this->blob_bottom_vec_.size() == 2) {
+        this->blob_bottom_vec_.pop_back();
+    }
 
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);

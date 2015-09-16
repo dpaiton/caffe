@@ -974,8 +974,9 @@ message SparseUnitParameter{
   optional bool bias_term = 2 [default = true];
   optional FillerParameter bias_filler = 3;
 
-  optional float lambda = 6 [default = 0.0];
-  optional float eta = 7 [default = 0.0];
+  optional float num_elements = 4 [default = 100];
+  optional float lambda = 5 [default = 0.0];
+  optional float eta = 6 [default = 0.0];
 }
 
 message SPPParameter {

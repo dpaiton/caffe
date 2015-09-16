@@ -13,10 +13,16 @@ template <typename Dtype>
 void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  const Dtype* in_data    = bottom[0]->gpu_data();       // in_data  :: M_xN_
-  const Dtype* a_past     = bottom[1]->gpu_data();       // activity :: M_xK_
-  const Dtype* weights    = this->blobs_[0]->gpu_data(); // phi      :: N_xK_
-  Dtype* mutable_top_data = top[0]->mutable_gpu_data();  // output   :: M_xK_
+  const Dtype* in_data    = bottom[0]->gpu_data();       // data   :: M_xN_
+  const Dtype* weights    = this->blobs_[0]->gpu_data(); // phi    :: N_xK_
+  const Dtype* a_past;                                   // a(t-1) :: M_xK_
+  Dtype* mutable_top_data = top[0]->mutable_gpu_data();  // output :: M_xK_
+
+  if (bottom.size() == 1) {
+    a_past = previous_activity_.gpu_data();
+  } else {
+    a_past = bottom[1]->gpu_data();
+  }
 
   if (bias_term_) {
     const Dtype* bias = this->blobs_[1]->gpu_data(); // bias   :: 1xN_
@@ -56,7 +62,12 @@ void SparseUnitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const Dtype* weights = this->blobs_[0]->gpu_data();
   
   if (this->param_propagate_down_[0]) { // Weight gradient
-    const Dtype* a_past = bottom[1]->gpu_data();
+    const Dtype* a_past;
+    if (bottom.size() == 1) {
+      a_past = previous_activity_.gpu_data();
+    } else {
+      a_past = bottom[1]->gpu_data();
+    }
     Dtype* weights_diff = this->blobs_[0]->mutable_gpu_diff();
 
     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
