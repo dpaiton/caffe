@@ -19,6 +19,8 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* mutable_top_data = top[0]->mutable_gpu_data();  // output :: M_xK_
 
   if (bottom.size() == 1) {
+    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
+        in_data, weights, (Dtype)0., previous_activity_.mutable_gpu_data());
     a_past = previous_activity_.gpu_data();
   } else {
     a_past = bottom[1]->gpu_data();
