@@ -103,7 +103,7 @@ void SparseUnitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         top[0]->gpu_diff(), weights, (Dtype)0., bottom[0]->mutable_gpu_diff());
   }
 
-  if (propagate_down[1]) { // Activity gradient
+  if (propagate_down[1] && bottom.size() == 2) { // Activity gradient
     caffe_copy(bottom[1]->count(), top[0]->cpu_diff(), bottom[1]->mutable_cpu_diff());
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, -eta_,
