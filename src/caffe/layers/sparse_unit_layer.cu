@@ -101,16 +101,29 @@ void SparseUnitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
 
   if (propagate_down[0]) { // Data graident
-    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, eta_,
-        top[0]->gpu_diff(), weights, (Dtype)0., bottom[0]->mutable_gpu_diff());
+    if (bottom.size() == 1) {
+      caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, N_, K_, K_, (Dtype)1.,
+          weights, competition_matrix_.gpu_data(), (Dtype)0.,
+          temp_3_.mutable_gpu_diff());
+      caffe_gpu_axpby(temp_3_.count(), eta_, weights, -eta_,
+          temp_3_.mutable_gpu_diff());
+      caffe_gpu_axpy(temp_3_.count(), (Dtype)1., weights,
+          temp_3_.mutable_gpu_diff());
+      caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
+          top[0]->gpu_diff(), temp_3_.gpu_diff(), (Dtype)0.,
+          bottom[0]->mutable_gpu_diff());
+    } else {
+      caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, eta_,
+          top[0]->gpu_diff(), weights, (Dtype)0., bottom[0]->mutable_gpu_diff());
+    }
   }
 
   if (propagate_down[1] && bottom.size() == 2) { // Activity gradient
-    caffe_copy(bottom[1]->count(), top[0]->cpu_diff(), bottom[1]->mutable_cpu_diff());
+    caffe_copy(bottom[1]->count(), top[0]->gpu_diff(), bottom[1]->mutable_gpu_diff());
 
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, -eta_,
-        top[0]->cpu_diff(), competition_matrix_.cpu_data(), (Dtype)1., 
-        bottom[1]->mutable_cpu_diff());
+    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, -eta_,
+        top[0]->gpu_diff(), competition_matrix_.gpu_data(), (Dtype)1., 
+        bottom[1]->mutable_gpu_diff());
   }
 }
 

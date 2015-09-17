@@ -363,7 +363,7 @@ class SparseUnitLayer: public Layer<Dtype> {
   bool bias_term_;
   Dtype lambda_, eta_;
 
-  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_;
+  Blob<Dtype> temp_1_, temp_2_, temp_3_, sum_top_diff_;
   Blob<Dtype> previous_activity_;   // M_xK_, only used if NumBottomBlobs=1
   Blob<Dtype> biased_input_;        // N_xK_
   Blob<Dtype> competition_matrix_;  // <phi^T,phi> has dim K_xK_
