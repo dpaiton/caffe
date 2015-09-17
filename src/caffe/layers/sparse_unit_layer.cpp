@@ -76,6 +76,9 @@ void SparseUnitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   if (bottom.size() == 1) { // no bottom input specified
     previous_activity_.Reshape(top_shape); 
     caffe_set(previous_activity_.count(), (Dtype)0., previous_activity_.mutable_cpu_data());
+    //caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
+    //    bottom[0]->cpu_data(), this->blobs_[0]->cpu_data(), (Dtype)0.,
+    //    previous_activity_.mutable_cpu_data());
   }
 
   vector<int>temp_shape(2);
@@ -100,8 +103,6 @@ void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output :: M_xK_
 
   if (bottom.size() == 1) {
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
-        in_data, weights, (Dtype)0., previous_activity_.mutable_cpu_data());
     a_past = previous_activity_.cpu_data();
   } else {
     a_past = bottom[1]->cpu_data();
