@@ -26,7 +26,7 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     caffe_gpu_sub(bottom[0]->count(), bottom[0]->gpu_data(), temp_1_.gpu_data(),
         biased_input_.mutable_gpu_data());
   } else {
-    caffe_copy(bottom[0]->count(), bottom[0]->gpu_data,
+    caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
         biased_input_.mutable_gpu_data());
   }
 
