@@ -13,13 +13,14 @@ template <typename Dtype>
 void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
+  const Dtype* in_data    = bottom[0]->gpu_data();       // data   :: M_xN_
   const Dtype* weights    = this->blobs_[0]->gpu_data(); // phi    :: N_xK_
   const Dtype* a_past;                                   // a(t-1) :: M_xK_
   Dtype* mutable_top_data = top[0]->mutable_gpu_data();  // output :: M_xK_
 
   if (bottom.size() == 1) {
     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
-        bottom[0]->gpu_data(), weights, (Dtype)0., previous_activity_.mutable_gpu_data());
+        in_data, weights, (Dtype)0., previous_activity_.mutable_gpu_data());
     a_past = previous_activity_.gpu_data();
   } else {
     a_past = bottom[1]->gpu_data();
@@ -30,14 +31,14 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // Replicate bias vector into M_xN_ matrix, store in temp_1_
     caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
         batch_multiplier_.gpu_data(), bias, (Dtype)0., temp_1_.mutable_gpu_data());
-    // Subtract bias values from input
-    caffe_gpu_sub(bottom[0]->count(), bottom[0]->gpu_data(), temp_1_.gpu_data(),
+    // Subtract bias values from in_data
+    caffe_gpu_sub(bottom[0]->count(), in_data, temp_1_.gpu_data(),
         biased_input_.mutable_gpu_data());
   } else {
-    caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(), biased_input_.mutable_gpu_data());
+    caffe_copy(bottom[0]->count(), in_data, biased_input_.mutable_gpu_data());
   }
 
-  // competition_matrix_ = phi^Tphi
+  // competition_matrix_ = w^Tw
   caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, K_, N_, (Dtype)1.,
       weights, weights, (Dtype)0., competition_matrix_.mutable_gpu_data());
 
