@@ -344,7 +344,7 @@ class SparseUnitLayer: public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
   
   virtual inline const char* type() const { return "SparseUnit"; }
-  virtual inline int ExactNumBottomBlobs() const { return -1; }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -363,8 +363,7 @@ class SparseUnitLayer: public Layer<Dtype> {
   bool bias_term_;
   Dtype lambda_, eta_;
 
-  Blob<Dtype> temp_1_, temp_2_, temp_3_, sum_top_diff_;
-  Blob<Dtype> previous_activity_;   // M_xK_, only used if NumBottomBlobs=1
+  Blob<Dtype> temp_1_, temp_2_, sum_top_diff_;
   Blob<Dtype> biased_input_;        // N_xK_
   Blob<Dtype> competition_matrix_;  // <phi^T,phi> has dim K_xK_
   Blob<Dtype> batch_multiplier_;    // for summing (or replicating) along batch dim

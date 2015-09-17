@@ -18,12 +18,8 @@ void SparseUnitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   bias_term_ = this->layer_param_.sparse_unit_param().bias_term();
 
   M_ = bottom[0]->shape(0); // batch size
+  K_ = bottom[1]->count(1); // num elements (features)
   N_ = bottom[0]->count(1); // num pixels per batch
-  if (bottom.size() == 2) {
-      K_ = bottom[1]->count(1); // num elements (features)
-  } else {
-      K_ = this->layer_param_.sparse_unit_param().num_elements();
-  }
 
   if (bias_term_) {
     this->blobs_.resize(2);
@@ -73,11 +69,6 @@ void SparseUnitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     caffe_set(M_, (Dtype)1., batch_multiplier_.mutable_cpu_data());
   }
 
-  if (bottom.size() == 1) { // no previous activity specified
-    previous_activity_.Reshape(top_shape); 
-    caffe_set(previous_activity_.count(), (Dtype)0., previous_activity_.mutable_cpu_data());
-  }
-
   vector<int>temp_shape(2);
   temp_shape[0] = M_;
   temp_shape[1] = N_;
@@ -85,11 +76,6 @@ void SparseUnitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   temp_shape[0] = K_;
   temp_shape[1] = K_;
   temp_2_.Reshape(temp_shape);
-  if (bottom.size() == 1) {
-    temp_shape[0] = N_;
-    temp_shape[1] = K_;
-    temp_3_.Reshape(temp_shape);
-  }
 
   vector<int> sum_top_diff_shape(1, K_);
   sum_top_diff_.Reshape(sum_top_diff_shape);
@@ -100,16 +86,8 @@ void SparseUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
   const Dtype* weights    = this->blobs_[0]->cpu_data(); // phi    :: N_xK_
-  const Dtype* a_past;                                   // a(t-1) :: M_xK_
+  const Dtype* a_past     = bottom[1]->cpu_data();       // a(t-1) :: M_xK_
   Dtype* mutable_top_data = top[0]->mutable_cpu_data();  // output :: M_xK_
-
-  if (bottom.size() == 1) {
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, N_, (Dtype)1.,
-        bottom[0]->cpu_data(), weights, (Dtype)0., previous_activity_.mutable_cpu_data());
-    a_past = previous_activity_.cpu_data();
-  } else {
-    a_past = bottom[1]->cpu_data();
-  }
 
   if (bias_term_) {
     const Dtype* bias = this->blobs_[1]->cpu_data(); // bias   :: 1xN_
@@ -149,12 +127,8 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   const Dtype* weights = this->blobs_[0]->cpu_data();
   
   if (this->param_propagate_down_[0]) { // Weight gradient
-    const Dtype* a_past;
-    if (bottom.size() == 1) {
-      a_past = previous_activity_.cpu_data();
-    } else {
-      a_past = bottom[1]->cpu_data();
-    }
+    const Dtype* a_past = bottom[1]->cpu_data();
+      
     Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
@@ -186,24 +160,11 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
 
   if (propagate_down[0]) { // Data graident
-    if (bottom.size() == 1) {
-      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, N_, K_, K_, (Dtype)1.,
-          weights, competition_matrix_.cpu_data(), (Dtype)0.,
-          temp_3_.mutable_cpu_diff());
-      caffe_cpu_axpby(temp_3_.count(), eta_, weights, -eta_,
-          temp_3_.mutable_cpu_diff());
-      caffe_axpy(temp_3_.count(), (Dtype)1., weights,
-          temp_3_.mutable_cpu_diff());
-      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
-          top[0]->cpu_diff(), temp_3_.cpu_diff(), (Dtype)0.,
-          bottom[0]->mutable_cpu_diff());
-    } else {
       caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, eta_,
           top[0]->cpu_diff(), weights, (Dtype)0., bottom[0]->mutable_cpu_diff());
-    } 
   }
 
-  if (propagate_down[1] && bottom.size() == 2) { // Activity gradient
+  if (propagate_down[1]) { // Activity gradient
     caffe_copy(bottom[1]->count(), top[0]->cpu_diff(), bottom[1]->mutable_cpu_diff());
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, K_, K_, -eta_,
