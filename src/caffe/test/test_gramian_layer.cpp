@@ -24,11 +24,10 @@ class GramianLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
 
  protected:
-  //create blob -> batch=3; elements=5; pixels = 4 (2x2)
+  //create blob -> numBatch=3; numElements=5; numPixels = 4 (2x2)
   GramianLayerTest()
-      : blob_bottom_(new Blob<Dtype>(3, 5, 2, 2)),
-        blob_top_(new Blob<Dtype>()),
-        gram_(new Blob<Dtype>()) {
+      : blob_bottom_(new Blob<Dtype>(2, 5, 2, 2)),
+        blob_top_(new Blob<Dtype>()) {
     
     // fill the values
     FillerParameter filler_param;
@@ -41,11 +40,10 @@ class GramianLayerTest : public MultiDeviceTest<TypeParam> {
     blob_top_vec_.push_back(blob_top_);
   }
 
-  virtual ~GramianLayerTest() { delete blob_bottom_; delete blob_top_; delete gram_; }
+  virtual ~GramianLayerTest() { delete blob_bottom_; delete blob_top_; }
 
   Blob<Dtype>* const blob_bottom_;
   Blob<Dtype>* const blob_top_;
-  Blob<Dtype>* gram_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
   vector<Blob<Dtype>*> blob_top_vec_;
 };
@@ -54,7 +52,7 @@ TYPED_TEST_CASE(GramianLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(GramianLayerTest, TestSetUp) {
 
-  int numBatch    = 3;
+  int numBatch    = 2;
   int numElements = 5;
 
   typedef typename TypeParam::Dtype Dtype;
@@ -78,7 +76,7 @@ TYPED_TEST(GramianLayerTest, TestForward) {
   if (Caffe::mode() == Caffe::CPU ||
       sizeof(Dtype) == 4 || IS_VALID_CUDA) {
 
-    int numBatch    = 3;
+    int numBatch    = 2;
     int numElements = 5;
     int numPixelsW  = 2;
     int numPixelsH  = 2;
@@ -96,18 +94,6 @@ TYPED_TEST(GramianLayerTest, TestForward) {
     // Forward Pass
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
-    this->gram_->Reshape(this->blob_top_vec_[0]->shape());
-
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, 25, 25, 1, (Dtype)1.,
-      this->blob_bottom_vec_[0]->cpu_data(), this->blob_bottom_vec_[0]->cpu_data(),
-      (Dtype)0., this->gram_->mutable_cpu_data());
-
-    //std::cout<<"\n";
-    //std::cout<<"bot size: "<<this->blob_bottom_vec_[0]->count();
-    //std::cout<<"\n";
-    //std::cout<<"top size: "<<this->blob_top_vec_[0]->count();
-    //std::cout<<"\n";
-
     const Dtype* top_data = this->blob_top_vec_[0]->cpu_data();
     const Dtype* bot_data = this->blob_bottom_vec_[0]->cpu_data();
     for (int b = 0; b < numBatch; ++b) {
@@ -122,8 +108,7 @@ TYPED_TEST(GramianLayerTest, TestForward) {
                     }
                 }
                 Dtype out = top_data[this->blob_top_vec_[0]->offset(b, i*numElements+j)];
-                //std::cout<<"OUT: "<<out<<"\n"<<"SUM: "<<sum<<"\n";
-                CHECK(out==sum);
+                ASSERT_NEAR(out,sum,1e-6);
             }
         }
     }
