@@ -80,18 +80,20 @@ TYPED_TEST(GramianLayerTest, TestForward) {
     int numElements = 5;
     int numPixelsW  = 2;
     int numPixelsH  = 2;
+    Dtype normalize_scale = 1.0/pow(2.0*numElements*numPixelsW*numPixelsH,2.0);
 
     //Set params
     LayerParameter layer_param;
+    GramianParameter* gramian_param =
+      layer_param.mutable_gramian_param();
+    gramian_param->set_normalize_output(true);
 
     // Create layer
     shared_ptr<GramianLayer<Dtype> > layer(
         new GramianLayer<Dtype>(layer_param));
 
-    // Setup
+    // Setup & forward pass
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-
-    // Forward Pass
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
     const Dtype* top_data = this->blob_top_vec_[0]->cpu_data();
@@ -107,6 +109,7 @@ TYPED_TEST(GramianLayerTest, TestForward) {
                         sum += act1 * act2;
                     }
                 }
+                sum *= normalize_scale;
                 Dtype out = top_data[this->blob_top_vec_[0]->offset(b, i*numElements+j)];
                 ASSERT_NEAR(out,sum,1e-6);
             }
@@ -128,10 +131,16 @@ TYPED_TEST(GramianLayerTest, TestGradient) {
   if (Caffe::mode() == Caffe::CPU ||
       sizeof(Dtype) == 4 || IS_VALID_CUDA) {
 
+    // Set params
     LayerParameter layer_param;
+    GramianParameter* gramian_param =
+      layer_param.mutable_gramian_param();
+    gramian_param->set_normalize_output(true);
 
+    // Create layer
     GramianLayer<Dtype> layer(layer_param);
 
+    // Check gradient
     Dtype stepsize  = 1e-2;
     Dtype threshold = 1e-3;
     GradientChecker<Dtype> checker(stepsize, threshold);
