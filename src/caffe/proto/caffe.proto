@@ -481,7 +481,7 @@ message BatchNormParameter {
   optional float eps = 3 [default = 1e-5];
 }
 
-/// Message that stores parameters used by BiasLayer 
+/// Message that stores parameters used by BiasLayer
 message BiasParameter {
   optional FillerParameter bias_filler = 1; // The filler for the bias
 }
@@ -654,7 +654,7 @@ message FlattenParameter {
   optional int32 end_axis = 2 [default = -1];
 }
 
-/// Message that stores parameters used by GramianLayer 
+/// Message that stores parameters used by GramianLayer
 message GramianParameter {
     // Whether to divide output by (2*num_channels*num_pixels)^2
     optional bool normalize_output = 1 [default = false];
