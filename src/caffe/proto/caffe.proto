@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 142 (last added: bias_param)
+// LayerParameter next available layer-specific ID: 141 (last added: gramian_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -355,7 +355,6 @@ message LayerParameter {
   // The default for the engine is set by the ENGINE switch at compile-time.
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
-  optional BiasParameter bias_param = 141;
   optional BatchNormParameter batch_norm_param = 139;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
@@ -479,11 +478,6 @@ message BatchNormParameter {
   // Small value to add to the variance estimate so that we don't divide by
   // zero.
   optional float eps = 3 [default = 1e-5];
-}
-
-/// Message that stores parameters used by BiasLayer 
-message BiasParameter {
-  optional FillerParameter bias_filler = 1; // The filler for the bias
 }
 
 message ContrastiveLossParameter {
