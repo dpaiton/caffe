@@ -26,7 +26,7 @@ class GramianLayerTest : public MultiDeviceTest<TypeParam> {
  protected:
   //create blob -> numBatch=3; numElements=5; numPixels = 4 (2x2)
   GramianLayerTest()
-      : blob_bottom_(new Blob<Dtype>(3, 5, 2, 2)),
+      : blob_bottom_(new Blob<Dtype>(2, 5, 2, 2)),
         blob_top_(new Blob<Dtype>()) {
     
     // fill the values
@@ -52,7 +52,7 @@ TYPED_TEST_CASE(GramianLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(GramianLayerTest, TestSetUp) {
 
-  int numBatch    = 3;
+  int numBatch    = 2;
   int numElements = 5;
 
   typedef typename TypeParam::Dtype Dtype;
@@ -76,7 +76,7 @@ TYPED_TEST(GramianLayerTest, TestForward) {
   if (Caffe::mode() == Caffe::CPU ||
       sizeof(Dtype) == 4 || IS_VALID_CUDA) {
 
-    int numBatch    = 3;
+    int numBatch    = 2;
     int numElements = 5;
     int numPixelsW  = 2;
     int numPixelsH  = 2;

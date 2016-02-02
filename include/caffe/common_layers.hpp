@@ -496,7 +496,6 @@ class GramianLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  Blob<Dtype> bot_temp_1_, bot_temp_2_;
   int M_;
   int K_;
   int N_;
