@@ -27,11 +27,8 @@ void GramianLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         const Dtype* top_diff = top[0]->gpu_diff() + top[0]->offset(batch);
         // Input gradient
         if (propagate_down[0]) {
-            caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, K_, N_, K_, normalize_scale_,
-              top_diff, bottom_data, (Dtype)0., bot_temp_1_.mutable_gpu_diff());
-            caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, N_, K_, normalize_scale_,
-              top_diff, bottom_data, (Dtype)0., bot_temp_2_.mutable_gpu_diff());
-            caffe_gpu_add(K_*N_, bot_temp_1_.gpu_diff(), bot_temp_2_.gpu_diff(), mutable_bottom_diff);
+            caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, K_, N_, K_, normalize_scale_ * 2.0,
+              top_diff, bottom_data, (Dtype)0., mutable_bottom_diff);
         }
     }
 }

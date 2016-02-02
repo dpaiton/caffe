@@ -60,6 +60,7 @@ void GramianLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, K_, N_, K_, normalize_scale_,
               top_diff, bottom_data, (Dtype)0., bot_temp_2_.mutable_cpu_diff());
             caffe_add(K_*N_, bot_temp_1_.cpu_diff(), bot_temp_2_.cpu_diff(), mutable_bottom_diff);
+
         }
     }
 }
