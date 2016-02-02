@@ -499,7 +499,6 @@ class GramianLayer : public Layer<Dtype> {
   int M_;
   int K_;
   int N_;
-  Dtype normalize_scale_;
 };
 
 

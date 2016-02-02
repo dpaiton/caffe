@@ -650,8 +650,7 @@ message FlattenParameter {
 
 /// Message that stores parameters used by GramianLayer 
 message GramianParameter {
-    // Whether to divide output by (2*num_pixels*num_channels)^2
-    optional bool normalize_output = 1 [default = false];
+    // no optional params yet
 }
 
 // Message that stores parameters used by HDF5DataLayer
