@@ -360,7 +360,7 @@ class SparseUnitLayer: public Layer<Dtype> {
   int M_; // Batch size
   int K_; // num pixels in bottom[0] (also length of features)
   int N_; // num features
-  bool bias_term_;
+  bool bias_term_, prop_weight_, prop_bias_;
   Dtype lambda_, eta_;
 
   Blob<Dtype> temp_1_, temp_2_, sum_top_diff_;

@@ -976,6 +976,9 @@ message SparseUnitParameter{
 
   optional float lambda = 4 [default = 0.0];
   optional float eta = 5 [default = 0.0];
+
+  optional bool prop_weight = 6 [default = true];
+  optional bool prop_bias = 7 [default = true];
 }
 
 message SPPParameter {

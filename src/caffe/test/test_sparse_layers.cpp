@@ -133,6 +133,8 @@ TYPED_TEST(SparseLayerTest, TestUnitForward) {
     SparseUnitParameter* sparse_unit_param =
         layer_param.mutable_sparse_unit_param();
 
+    sparse_unit_param->set_prop_bias(true);
+    sparse_unit_param->set_prop_weight(true);
     sparse_unit_param->set_lambda(0.01);
     sparse_unit_param->set_eta(0.01);
     sparse_unit_param->mutable_weight_filler()->set_type("uniform");

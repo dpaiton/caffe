@@ -13,9 +13,14 @@ template <typename Dtype>
 void SparseUnitLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  eta_       = this->layer_param_.sparse_unit_param().eta();
-  lambda_    = this->layer_param_.sparse_unit_param().lambda();
-  bias_term_ = this->layer_param_.sparse_unit_param().bias_term();
+  eta_         = this->layer_param_.sparse_unit_param().eta();
+  lambda_      = this->layer_param_.sparse_unit_param().lambda();
+  bias_term_   = this->layer_param_.sparse_unit_param().bias_term();
+  // TODO: prop_weight and prop_bias parameters
+  // determine whether gradient is applied to weights or bias params.
+  // Thisshould be able to be set with param_propagate_down
+  prop_weight_ =  this->layer_param_.sparse_unit_param().prop_weight();
+  prop_bias_   =  this->layer_param_.sparse_unit_param().prop_bias();
 
   M_ = bottom[0]->shape(0); // batch size
   K_ = bottom[1]->count(1); // num elements (features)
@@ -126,7 +131,7 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   
   const Dtype* weights = this->blobs_[0]->cpu_data();
   
-  if (this->param_propagate_down_[0]) { // Weight gradient
+  if (this->param_propagate_down_[0] && prop_weight_) { // Weight gradient
     const Dtype* a_past = bottom[1]->cpu_data();
       
     Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
@@ -148,7 +153,7 @@ void SparseUnitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         weights_diff);
   }
   
-  if (bias_term_ && this->param_propagate_down_[1]) { // Bias gradient
+  if (bias_term_ && this->param_propagate_down_[1] && prop_bias_) { // Bias gradient
     Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
 
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, K_, M_, (Dtype)1.,
