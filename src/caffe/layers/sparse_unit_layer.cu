@@ -52,10 +52,10 @@ void SparseUnitLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void SparseUnitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  
+
   const Dtype* weights = this->blobs_[0]->gpu_data();
-  
-  if (this->param_propagate_down_[0]) { // Weight gradient
+
+  if (this->param_propagate_down_[0] && prop_weight_) { // Weight gradient
     const Dtype* a_past = bottom[1]->gpu_data();
 
     Dtype* weights_diff = this->blobs_[0]->mutable_gpu_diff();
@@ -76,8 +76,8 @@ void SparseUnitLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         biased_input_.gpu_data(), top[0]->gpu_diff(), (Dtype)1.,
         weights_diff);
   }
-  
-  if (bias_term_ && this->param_propagate_down_[1]) { // Bias gradient
+
+  if (bias_term_ && this->param_propagate_down_[1] && prop_bias_) { // Bias gradient
     Dtype* bias_diff = this->blobs_[1]->mutable_gpu_diff();
 
     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, 1, K_, M_, (Dtype)1.,
